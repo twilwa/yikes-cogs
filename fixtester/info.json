@@ -1,0 +1,22 @@
+{
+    "$schema": "https://raw.githubusercontent.com/Cog-Creators/Red-DiscordBot/V3/develop/schema/red_cog.schema.json",
+    "name": "TwitterFix",
+    "short": "a simple url fixer",
+    "description": "This cog is designed to watch for certain URLs posted in your server, then take some action in response.",
+    "end_user_data_statement": "This cog does not persistently store any data or metadata about users.",
+    "install_msg": "Thanks for installing me, hmu at https://arena.x-ware.online if you need support or wanna hang out lol",
+    "author": [
+        "yikesawjeez"
+    ],
+    "required_cogs": {},
+    "requirements": [],
+    "tags": [
+        "twitter",
+        "link",
+        "regex"
+    ],
+    "min_bot_version": "3.5.0",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
