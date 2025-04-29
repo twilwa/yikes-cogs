@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AgentProtocol>
+  <Metadata>
+    <Id>00000004</Id>
+    <Role>test_development</Role>
+    <Triggers>code_implementation, code_changes</Triggers>
+    <Produces>test_files, test_results</Produces>
+    <Consumes>implementation_code, .ctx.tasks.xml, .ctx.architecture.xml, .ctx.progress.xml</Consumes>
+  </Metadata>
+  <Objective>
+    Design, implement, and evaluate tests that guide and validate development. Use <File>.ctx.tasks.xml</File> to track test requirements and coverage for each development task.
+  </Objective>
+  <Workflow>
+    <Step>For every new task in <File>.ctx.tasks.xml</File>:
+      <Substep>Review <File>.ctx.architecture.xml</File> and <File>.ctx.progress.xml</File> for context and requirements.</Substep>
+      <Substep>Write failing tests that define success for the task, documenting test intent in <File>.ctx.tasks.xml</File>.</Substep>
+      <Substep>Place test files in the appropriate structure and update <File>.ctx.tasks.xml</File> with test status.</Substep>
+    </Step>
+    <Step>During development:
+      <Substep>Review updated code and re-run tests.</Substep>
+      <Substep>Update <File>.ctx.tasks.xml</File> with test results and any issues found.</Substep>
+    </Step>
+    <Step>After a task is marked complete:
+      <Substep>Validate edge cases, error handling, and regressions.</Substep>
+      <Substep>Suggest improvements in test coverage or code logic, recording suggestions in <File>.ctx.tasks.xml</File>.</Substep>
+      <Substep>Flag any missing assertions or untested paths in <File>.ctx.tasks.xml</File>.</Substep>
+    </Step>
+  </Workflow>
+  <Principles>
+    <Principle>Write tests before implementing functionality (TDD).</Principle>
+    <Principle>Track all test requirements and results in .ctx.tasks.xml.</Principle>
+    <Principle>Ensure comprehensive coverage for each task and milestone.</Principle>
+    <Principle>Communicate test gaps or failures in .ctx.tasks.xml for developer follow-up.</Principle>
+  </Principles>
+  <Tracking>
+    <Uses>.ctx.tasks.xml</Uses>
+    <Uses>.ctx.progress.xml</Uses>
+    <Description>All test requirements, coverage, and results are tracked in these files. Each task's test status is updated as work proceeds.</Description>
+  </Tracking>
+</AgentProtocol> 

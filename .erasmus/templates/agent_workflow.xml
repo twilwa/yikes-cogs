@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Protocol name="Agent Workflow">
+  <Description>Defines the workflow and dependencies between different agent roles in the development process</Description>
+  
+  <Triggers>
+    <Trigger>New Project</Trigger>
+    <Trigger>Architecture Complete</Trigger>
+    <Trigger>Code Ready</Trigger>
+    <Trigger>Verification Complete</Trigger>
+    <Trigger>Review Passed</Trigger>
+    <Trigger>Documentation & Security Verified</Trigger>
+    <Trigger>Deployment Ready</Trigger>
+    <Trigger>Performance Verified</Trigger>
+    <Trigger>Test Failures</Trigger>
+    <Trigger>Linting Issues</Trigger>
+    <Trigger>Review Issues</Trigger>
+    <Trigger>Security Vulnerabilities</Trigger>
+    <Trigger>Performance Problems</Trigger>
+  </Triggers>
+  
+  <Produces>
+    <Output>Workflow Status</Output>
+    <Output>Agent Assignments</Output>
+    <Output>Development Artifacts</Output>
+  </Produces>
+  
+  <Consumes>
+    <Input>Project Requirements</Input>
+    <Input>Code Changes</Input>
+    <Input>Test Results</Input>
+    <Input>Review Comments</Input>
+  </Consumes>
+  
+  <Workflow>
+    <Step name="Project Initiation">
+      <Description>Orchestrator initiates the project and hands off to Product Owner</Description>
+      <Actions>
+        <Action>Orchestrator evaluates project requirements</Action>
+        <Action>Orchestrator assigns Product Owner Agent</Action>
+      </Actions>
+    </Step>
+    
+    <Step name="Architecture & Planning">
+      <Description>Product Owner creates architecture and sprint plan</Description>
+      <Actions>
+        <Action>Product Owner creates .architecture.md</Action>
+        <Action>Product Owner creates .progress.md</Action>
+        <Action>Product Owner hands off to Developer Agent</Action>
+      </Actions>
+    </Step>
+    
+    <Step name="Code Implementation">
+      <Description>Developer implements code and breaks down tasks</Description>
+      <Actions>
+        <Action>Developer creates .tasks.md</Action>
+        <Action>Developer implements code</Action>
+        <Action>Developer hands off to Testing and Style Agents</Action>
+      </Actions>
+    </Step>
+    
+    <Step name="Code Verification">
+      <Description>Testing and Style Agents verify code quality</Description>
+      <Actions>
+        <Action>Testing Agent creates and runs tests</Action>
+        <Action>Style Agent checks code style</Action>
+        <Action>If issues found, hand off to Debug Agent or Developer</Action>
+        <Action>If verified, hand off to Code Review Agent</Action>
+      </Actions>
+    </Step>
+    
+    <Step name="Code Review">
+      <Description>Code Review Agent assesses code quality</Description>
+      <Actions>
+        <Action>Code Review Agent reviews code</Action>
+        <Action>If issues found, hand off to Developer</Action>
+        <Action>If approved, hand off to Documentation and Security Agents</Action>
+      </Actions>
+    </Step>
+    
+    <Step name="Documentation & Security">
+      <Description>Documentation and Security Agents complete their checks</Description>
+      <Actions>
+        <Action>Documentation Agent updates documentation</Action>
+        <Action>Security Agent scans for vulnerabilities</Action>
+        <Action>If issues found, hand off to Developer</Action>
+        <Action>If verified, hand off to CI/CD Agent</Action>
+      </Actions>
+    </Step>
+    
+    <Step name="CI/CD">
+      <Description>CI/CD Agent handles build and deployment</Description>
+      <Actions>
+        <Action>CI/CD Agent builds the application</Action>
+        <Action>CI/CD Agent prepares deployment</Action>
+        <Action>CI/CD Agent hands off to Performance Agent</Action>
+      </Actions>
+    </Step>
+    
+    <Step name="Performance Testing">
+      <Description>Performance Agent tests and optimizes</Description>
+      <Actions>
+        <Action>Performance Agent runs performance tests</Action>
+        <Action>If issues found, hand off to Developer</Action>
+        <Action>If verified, hand off to Orchestrator</Action>
+      </Actions>
+    </Step>
+  </Workflow>
+  
+  <Agents>
+    <Agent name="Orchestrator Agent">
+      <Description>Initiates project workflows and coordinates agents</Description>
+      <ReceivesFrom>Performance Agent (final verification)</ReceivesFrom>
+      <HandsOffTo>Product Owner Agent (project initiation)</HandsOffTo>
+    </Agent>
+    
+    <Agent name="Product Owner Agent">
+      <Description>Handles project planning and requirements definition</Description>
+      <ReceivesFrom>Orchestrator Agent (project initiation)</ReceivesFrom>
+      <HandsOffTo>Developer Agent (architecture and sprint plan)</HandsOffTo>
+      <Produces>.architecture.md, .progress.md</Produces>
+    </Agent>
+    
+    <Agent name="Developer Agent">
+      <Description>Implements code and breaks down tasks</Description>
+      <ReceivesFrom>Product Owner Agent (architecture and sprint plan)</ReceivesFrom>
+      <HandsOffTo>Testing Agent, Style Agent (code ready for verification)</HandsOffTo>
+      <Produces>.tasks.md, implementation code</Produces>
+    </Agent>
+    
+    <Agent name="Testing Agent">
+      <Description>Creates and executes tests</Description>
+      <ReceivesFrom>Developer Agent (code to test)</ReceivesFrom>
+      <HandsOffTo>Code Review Agent (tests passing) or Debug Agent (test failures)</HandsOffTo>
+      <Produces>Test files, test results</Produces>
+    </Agent>
+    
+    <Agent name="Style Agent">
+      <Description>Verifies code style and quality</Description>
+      <ReceivesFrom>Developer Agent (code to analyze)</ReceivesFrom>
+      <HandsOffTo>Code Review Agent (style verified) or Developer Agent (linting issues)</HandsOffTo>
+      <Produces>Style reports, linting fixes</Produces>
+    </Agent>
+    
+    <Agent name="Code Review Agent">
+      <Description>Assesses code quality</Description>
+      <ReceivesFrom>Testing Agent, Style Agent (verified code)</ReceivesFrom>
+      <HandsOffTo>Documentation Agent, Security Agent (review passed) or Developer Agent (review issues)</HandsOffTo>
+      <Produces>Review comments, approval</Produces>
+    </Agent>
+    
+    <Agent name="Security Agent">
+      <Description>Scans for security vulnerabilities</Description>
+      <ReceivesFrom>Code Review Agent (code to scan)</ReceivesFrom>
+      <HandsOffTo>CI/CD Agent (security verified) or Developer Agent (security issues)</HandsOffTo>
+      <Produces>Security reports, vulnerability fixes</Produces>
+    </Agent>
+    
+    <Agent name="Documentation Agent">
+      <Description>Updates documentation</Description>
+      <ReceivesFrom>Code Review Agent (code to document)</ReceivesFrom>
+      <HandsOffTo>CI/CD Agent (docs updated)</HandsOffTo>
+      <Produces>README, API docs, inline comments</Produces>
+    </Agent>
+    
+    <Agent name="CI/CD Agent">
+      <Description>Handles build and deployment processes</Description>
+      <ReceivesFrom>Security Agent, Documentation Agent (verified code and docs)</ReceivesFrom>
+      <HandsOffTo>Performance Agent (deployment ready)</HandsOffTo>
+      <Produces>Build artifacts, deployment configurations</Produces>
+    </Agent>
+    
+    <Agent name="Performance Agent">
+      <Description>Tests and optimizes performance</Description>
+      <ReceivesFrom>CI/CD Agent (deployed code)</ReceivesFrom>
+      <HandsOffTo>Orchestrator Agent (performance verified) or Developer Agent (performance issues)</HandsOffTo>
+      <Produces>Performance reports, optimization recommendations</Produces>
+    </Agent>
+    
+    <Agent name="Debug Agent">
+      <Description>Diagnoses and resolves issues</Description>
+      <ReceivesFrom>Testing Agent (test failures)</ReceivesFrom>
+      <HandsOffTo>Developer Agent (issues identified)</HandsOffTo>
+      <Produces>Debug reports, fix recommendations</Produces>
+    </Agent>
+  </Agents>
+  
+  <ErrorHandling>
+    <ErrorPath name="Test Failures">
+      <Flow>Testing → Debug → Developer</Flow>
+    </ErrorPath>
+    
+    <ErrorPath name="Linting Issues">
+      <Flow>Style Agent → Developer</Flow>
+    </ErrorPath>
+    
+    <ErrorPath name="Review Issues">
+      <Flow>Code Review → Developer</Flow>
+    </ErrorPath>
+    
+    <ErrorPath name="Security Vulnerabilities">
+      <Flow>Security → Developer</Flow>
+    </ErrorPath>
+    
+    <ErrorPath name="Performance Problems">
+      <Flow>Performance → Developer</Flow>
+    </ErrorPath>
+  </ErrorHandling>
+  
+  <Principles>
+    <Principle name="Continuous Flow">
+      <Description>Maintain a continuous flow of work through the agent pipeline</Description>
+    </Principle>
+    
+    <Principle name="Early Detection">
+      <Description>Detect and fix issues as early as possible in the workflow</Description>
+    </Principle>
+    
+    <Principle name="Clear Handoffs">
+      <Description>Ensure clear handoffs between agents with well-defined deliverables</Description>
+    </Principle>
+    
+    <Principle name="Feedback Loops">
+      <Description>Maintain feedback loops to improve code quality and agent performance</Description>
+    </Principle>
+  </Principles>
+  
+  <Tracking>
+    <Metric name="Cycle Time">
+      <Description>Time from project initiation to completion</Description>
+    </Metric>
+    
+    <Metric name="Issue Resolution Time">
+      <Description>Time to resolve issues at each stage</Description>
+    </Metric>
+    
+    <Metric name="Agent Utilization">
+      <Description>How effectively each agent is utilized</Description>
+    </Metric>
+  </Tracking>
+</Protocol> 

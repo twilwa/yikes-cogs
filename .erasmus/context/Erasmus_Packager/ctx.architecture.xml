@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Architecture>
+  <Title>Erasmus Packager</Title>
+  <Overview>
+    <Description>
+      The Erasmus Packager is a standalone Python tool for packaging, dependency analysis, and management. It analyzes Python projects, extracts and categorizes imports, maps them to PyPI packages, and produces a single executable script with a platform-aware bootstrap for dependency installation and execution. The tool is designed for automation, reproducibility, and cross-platform compatibility, providing a robust CLI for all operations.
+    </Description>
+  </Overview>
+  <CoreComponents>
+    <Component name="Packager">
+      <Purpose>Automates packaging, dependency tracking, and script generation for Python projects.</Purpose>
+      <Responsibilities>
+        <Responsibility>Recursively collect Python files from a directory, respecting exclusion patterns.</Responsibility>
+        <Responsibility>Parse and extract all import dependencies from Python files.</Responsibility>
+        <Responsibility>Distinguish between standard library, third-party, and local imports.</Responsibility>
+        <Responsibility>Map import names to PyPI package names, handling aliases and special cases.</Responsibility>
+        <Responsibility>Build a single script by merging code and imports, normalizing indentation and structure.</Responsibility>
+        <Responsibility>Generate platform-aware bootstrap scripts for dependency installation and execution using uv.</Responsibility>
+        <Responsibility>Provide a Typer-based CLI for packaging, file listing, and version display.</Responsibility>
+      </Responsibilities>
+      <TestFocus>
+        <Test>Correct extraction and categorization of imports from various Python files.<Status>Mostly Complete</Status></Test>
+        <Test>Accurate mapping of imports to PyPI packages, including custom and default mappings.</Test>
+        <Test>Proper exclusion of files and directories during collection.</Test>
+        <Test>Successful packaging of multi-file projects into a single script.</Test>
+        <Test>Generation of valid and executable bootstrap scripts for all supported platforms.</Test>
+        <Test>CLI commands function as expected and handle errors gracefully.</Test>
+      </TestFocus>
+    </Component>
+  </CoreComponents>
+  
+  <DevelopmentPrinciples>
+    <Principle name="Packager Principles">
+      <Detail>Favor automation and reproducibility in packaging and dependency management.</Detail>
+      <Detail>Ensure cross-platform compatibility for all generated scripts and bootstraps.</Detail>
+      <Detail>Minimize manual intervention by providing robust CLI tools.</Detail>
+      <Detail>Maintain clear separation between standard library, third-party, and local dependencies.</Detail>
+      <Detail>Use type hints, docstrings, and logging for maintainability and traceability.</Detail>
+    </Principle>
+  </DevelopmentPrinciples>
+  
+  <Dependencies>
+    <Dependency>typer</Dependency>
+    <Dependency>rich</Dependency>
+    <Dependency>ast-comments</Dependency>
+    <Dependency>packaging</Dependency>
+    <Dependency>tomli</Dependency>
+    <Dependency>tomli-w</Dependency>
+    <Dependency>uv (runtime, for bootstrapping and dependency management)</Dependency>
+  </Dependencies>
+  
+  <DirectoryStructure>
+    <Directory name="packager">
+      <File>__init__.py</File>
+      <File>__main__.py</File>
+      <File>builder.py</File>
+      <File>collector.py</File>
+      <File>mapping.py</File>
+      <File>parser.py</File>
+      <File>stdlib.py</File>
+      <File>uv_wrapper.py</File>
+      <File>README.md</File>
+      <File>pyproject.toml</File>
+    </Directory>
+  </DirectoryStructure>
+  
+  <DevelopmentWorkflow>
+    <Step>Collect Python files from the target directory or file using collector.py.</Step>
+    <Step>Parse each file to extract and categorize imports using parser.py and stdlib.py.</Step>
+    <Step>Map all imports to their corresponding PyPI package names using mapping.py.</Step>
+    <Step>Build a single script by merging code and imports, normalizing indentation and structure using builder.py.</Step>
+    <Step>Generate a platform-aware bootstrap script for dependency installation and execution using uv_wrapper.py.</Step>
+    <Step>Expose all functionality via a Typer-based CLI in __main__.py, supporting packaging, file listing, and version display.</Step>
+    <Step>Test all components for correctness, error handling, and cross-platform compatibility.</Step>
+  </DevelopmentWorkflow>
+</Architecture>

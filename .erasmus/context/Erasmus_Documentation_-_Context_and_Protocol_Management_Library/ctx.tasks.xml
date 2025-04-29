@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Tasks>
+  <DocumentationTasks>
+    <Task name="Comprehensive Codebase Documentation">
+      <Description>Systematically improve documentation across the entire Erasmus project</Description>
+      <Status>In Progress</Status>
+      <Priority>1</Priority>
+      <Subtasks>
+        <Subtask name="Core Module Docstrings">
+          <Description>Add comprehensive docstrings to core modules: context, environment, protocol, file_monitor</Description>
+          <Status>In Progress</Status>
+          <Progress>
+            <Module name="context.py">
+              <Status>Partially Documented</Status>
+              <Details>Updated module-level docstring, enhanced exception class documentation, added comprehensive docstrings for CtxModel and CtxMngrModel, improved __init__ method documentation, enhanced create_context method documentation, added detailed get_context method documentation, added detailed base_path property documentation, added detailed save_context_file method documentation, added detailed load_context_file method documentation</Details>
+            </Module>
+          </Progress>
+          <Files>
+            <File>erasmus/context.py</File>
+            <File>erasmus/environment.py</File>
+            <File>erasmus/protocol.py</File>
+            <File>erasmus/file_monitor.py</File>
+          </Files>
+        </Subtask>
+        <Subtask name="Utility Module Documentation">
+          <Description>Enhance documentation for utility modules with detailed explanations</Description>
+          <Status>Not Started</Status>
+          <Files>
+            <File>erasmus/utils/paths.py</File>
+            <File>erasmus/utils/logging.py</File>
+            <File>erasmus/utils/rich_console.py</File>
+            <File>erasmus/utils/sanatizer.py</File>
+            <File>erasmus/utils/xml_parser.py</File>
+          </Files>
+        </Subtask>
+        <Subtask name="CLI Module Documentation">
+          <Description>Document CLI command modules with usage examples and detailed explanations</Description>
+          <Status>Not Started</Status>
+          <Files>
+            <File>erasmus/cli/context_commands.py</File>
+            <File>erasmus/cli/environment_commands.py</File>
+            <File>erasmus/cli/mcp_commands.py</File>
+            <File>erasmus/cli/protocol_commands.py</File>
+            <File>erasmus/cli/setup_commands.py</File>
+          </Files>
+        </Subtask>
+        <Subtask name="Packager Module Documentation">
+          <Description>Add comprehensive documentation to packager modules explaining build and deployment processes</Description>
+          <Status>Not Started</Status>
+          <Files>
+            <File>packager/builder.py</File>
+            <File>packager/collector.py</File>
+            <File>packager/embedder.py</File>
+            <File>packager/inliner.py</File>
+            <File>packager/mapping.py</File>
+          </Files>
+        </Subtask>
+        <Subtask name="README and Project Documentation">
+          <Description>Update README with detailed project overview, architecture, and usage instructions</Description>
+          <Status>In Progress</Status>
+          <Files>
+            <File>README.md</File>
+            <File>.ctx.architecture.xml</File>
+          </Files>
+        </Subtask>
+      </Subtasks>
+    </Task>
+  </DocumentationTasks>
+  <CurrentTasks>
+    <Task name="Path Management">
+      <Description>Centralized path management for different IDE environments.</Description>
+      <Status>Completed</Status>
+      <Priority>1</Priority>
+    </Task>
+    <Task name="Environment Management">
+      <Description>Generic, type-safe environment variable management.</Description>
+      <Status>Completed</Status>
+      <Priority>2</Priority>
+    </Task>
+    <Task name="File Monitor Service">
+      <Description>Monitors and syncs architecture, progress, and tasks files to rules files.</Description>
+      <Status>Completed</Status>
+      <Priority>3</Priority>
+    </Task>
+    <Task name="Context Manager">
+      <Description>Manages context files, ensures ASCII-only rules files, and safe file operations.</Description>
+      <Status>Completed</Status>
+      <Priority>4</Priority>
+    </Task>
+    <Task name="Protocol Handler">
+      <Description>Manages protocol definitions and ensures content preservation.</Description>
+      <Status>Completed</Status>
+      <Priority>5</Priority>
+    </Task>
+    <Task name="MCP Integration">
+      <Description>Handles Model Context Protocol management, including registry, client, and server implementations.</Description>
+      <Status>Completed</Status>
+      <Priority>6</Priority>
+    </Task>
+    <Task name="CLI Interface">
+      <Description>User interaction layer for context, protocol, and MCP server management.</Description>
+      <Status>Completed</Status>
+      <Priority>7</Priority>
+    </Task>
+    <!-- Detailed subtasks for Path Management (since it's In Progress) -->
+    <Task name="Implement PathMngrModel for centralized path management">
+      <Description>Develop a model to manage all relevant paths for the Erasmus library, supporting multiple IDE environments.</Description>
+      <Status>In Progress</Status>
+      <Priority>1</Priority>
+      <Subtasks>
+        <Subtask name="Design PathMngrModel interface">
+          <Status>Pending</Status>
+        </Subtask>
+        <Subtask name="Implement path resolution logic">
+          <Status>Pending</Status>
+        </Subtask>
+        <Subtask name="Document usage and methods">
+          <Status>Pending</Status>
+        </Subtask>
+      </Subtasks>
+    </Task>
+    <Task name="Define IDE enum with metadata for each IDE">
+      <Description>Create an enumeration for supported IDEs, including metadata for rules file, global rules path, and symlink logic.</Description>
+      <Status>Planned</Status>
+      <Priority>1</Priority>
+    </Task>
+    <Task name="Implement environment variable detection logic">
+      <Description>Develop logic to detect IDE environment from environment variables, with fallback to user prompt if unset.</Description>
+      <Status>Planned</Status>
+      <Priority>1</Priority>
+    </Task>
+    <Task name="Prompt user for IDE selection if variable not set">
+      <Description>Ensure the system can interactively prompt the user to select their IDE if not set in environment.</Description>
+      <Status>Planned</Status>
+      <Priority>1</Priority>
+    </Task>
+    <Task name="Ensure consistent directory structure and auto-create missing paths">
+      <Description>Verify and create necessary directories and files for each IDE environment.</Description>
+      <Status>Planned</Status>
+      <Priority>1</Priority>
+    </Task>
+    <Task name="Implement symlink logic for cross-IDE compatibility">
+      <Description>Develop logic to manage symlinks between IDE-specific files for compatibility.</Description>
+      <Status>Planned</Status>
+      <Priority>1</Priority>
+    </Task>
+    <Task name="Write unit tests for all path management logic">
+      <Description>Ensure comprehensive unit test coverage for all path management features.</Description>
+      <Status>Planned</Status>
+      <Priority>1</Priority>
+    </Task>
+  <Task name="Universal Installer &amp; Release Bundler">
+      <Description>Packager module that bundles Erasmus and dependencies into a universal installer (.sh/.py) with uv and extraction logic.</Description>
+      <Status>Completed</Status>
+      <Priority>1</Priority>
+    </Task>
+    <Task name="Comprehensive docstrings and comments throughout codebase">
+      <Description>Ensure all modules, classes, and functions are documented with clear docstrings and inline comments for maintainability and onboarding.</Description>
+      <Status>In Progress</Status>
+      <Priority>1</Priority>
+    </Task>
+  </CurrentTasks>
+  <NextSteps>
+    <Step>Focus on adding/maintaining comprehensive docstrings and comments throughout the codebase.</Step>
+    <Step>Onboard new users and contributors with updated documentation.</Step>
+    <Step>Maintain and test the universal installer and release workflow.</Step>
+    <Step>Continue improving testing coverage and onboarding materials.</Step>
+  </NextSteps>
+</Tasks>

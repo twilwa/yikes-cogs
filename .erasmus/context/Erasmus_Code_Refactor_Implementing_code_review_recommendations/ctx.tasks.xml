@@ -1,0 +1,62 @@
+<Tasks>
+  <CurrentTasks>
+    <Task name="Implement code review feedback for context and packager modules">
+      <Description>Implement all code review suggestions from .code_review.md for context management, template handling, and packager improvements.</Description>
+      <Subtasks>
+        <Subtask name="Add type hints to _IMPORT_TO_PACKAGE cache in packager/mapping.py">
+          <Status>Pending</Status>
+        </Subtask>
+        <Subtask name="Enhance get_default_content() error handling in context.py">
+          <Status>Pending</Status>
+        </Subtask>
+        <Subtask name="Standardize template file handling across context management">
+          <Status>Pending</Status>
+        </Subtask>
+        <Subtask name="Improve error messages and prevent silent failures in context/file management">
+          <Status>Pending</Status>
+        </Subtask>
+        <Subtask name="Add comprehensive docstrings and type hints to new/complex methods">
+          <Status>Pending</Status>
+        </Subtask>
+        <Subtask name="Review and optimize import statements (remove unused, prefer absolute)">
+          <Status>Pending</Status>
+        </Subtask>
+        <Subtask name="Simplify complex logic in context and path management">
+          <Status>Pending</Status>
+        </Subtask>
+        <Subtask name="Evaluate file I/O performance and caching">
+          <Status>Pending</Status>
+        </Subtask>
+        <Subtask name="Ensure cross-platform path handling with pathlib">
+          <Status>Pending</Status>
+        </Subtask>
+        <Subtask name="Add unit tests for edge/error cases and error handling">
+          <Status>Pending</Status>
+        </Subtask>
+      </Subtasks>
+      <Tests>
+        <Test name="Test error handling in get_default_content">
+          <Code><![CDATA[
+def test_get_default_content_error():
+    from erasmus.context import ContextManager
+    cm = ContextManager()
+    try:
+        cm.get_default_content('unsupported')
+    except ValueError as e:
+        assert "Unsupported file type" in str(e)
+    else:
+        assert False, "Expected ValueError for unsupported file type"
+]]></Code>
+        </Test>
+        <!-- Add more tests as needed -->
+      </Tests>
+    </Task>
+    <!-- Add more current tasks as needed -->
+  </CurrentTasks>
+  
+  <NextSteps>
+    <Step>Implement code review feedback for context and packager modules</Step>
+    <Step>Write and run tests for new error handling and type hints</Step>
+    <!-- Add more next steps as needed -->
+  </NextSteps>
+</Tasks> 

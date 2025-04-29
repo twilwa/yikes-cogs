@@ -1,0 +1,48 @@
+<Architecture>
+<Title>yikes-cogs</Title>
+  <Overview>
+    <Description>Project description goes here</Description>
+  </Overview>
+  
+  <CoreComponents>
+    <Component name="Component Name">
+      <Purpose>Component purpose</Purpose>
+      <Responsibilities>
+        <Responsibility>Responsibility 1</Responsibility>
+        <Responsibility>Responsibility 2</Responsibility>
+        <!-- Add more responsibilities as needed -->
+      </Responsibilities>
+      <TestFocus>
+        <Test>Test focus 1</Test>
+        <Test>Test focus 2</Test>
+        <!-- Add more test focuses as needed -->
+      </TestFocus>
+    </Component>
+    <!-- Add more components as needed -->
+  </CoreComponents>
+  
+  <DevelopmentPrinciples>
+    <Principle name="Principle Name">
+      <Detail>Principle detail 1</Detail>
+      <Detail>Principle detail 2</Detail>
+      <!-- Add more details as needed -->
+    </Principle>
+    <!-- Add more principles as needed -->
+  </DevelopmentPrinciples>
+  
+  <Dependencies>
+    <Dependency>Dependency 1</Dependency>
+    <Dependency>Dependency 2</Dependency>
+    <!-- Add more dependencies as needed -->
+  </Dependencies>
+  
+  <DirectoryStructure>
+    <!-- Add directory structure here -->
+  </DirectoryStructure>
+  
+  <DevelopmentWorkflow>
+    <Step>Workflow step 1</Step>
+    <Step>Workflow step 2</Step>
+    <!-- Add more steps as needed -->
+  </DevelopmentWorkflow>
+</Architecture>

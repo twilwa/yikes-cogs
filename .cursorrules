@@ -1,0 +1,168 @@
+<MetaRules>
+  <Architecture>
+<Title>yikes-cogs</Title>
+  <Overview>
+    <Description>Project description goes here</Description>
+  </Overview>
+  
+  <CoreComponents>
+    <Component name="Component Name">
+      <Purpose>Component purpose</Purpose>
+      <Responsibilities>
+        <Responsibility>Responsibility 1</Responsibility>
+        <Responsibility>Responsibility 2</Responsibility>
+        <!-- Add more responsibilities as needed -->
+      </Responsibilities>
+      <TestFocus>
+        <Test>Test focus 1</Test>
+        <Test>Test focus 2</Test>
+        <!-- Add more test focuses as needed -->
+      </TestFocus>
+    </Component>
+    <!-- Add more components as needed -->
+  </CoreComponents>
+  
+  <DevelopmentPrinciples>
+    <Principle name="Principle Name">
+      <Detail>Principle detail 1</Detail>
+      <Detail>Principle detail 2</Detail>
+      <!-- Add more details as needed -->
+    </Principle>
+    <!-- Add more principles as needed -->
+  </DevelopmentPrinciples>
+  
+  <Dependencies>
+    <Dependency>Dependency 1</Dependency>
+    <Dependency>Dependency 2</Dependency>
+    <!-- Add more dependencies as needed -->
+  </Dependencies>
+  
+  <DirectoryStructure>
+    <!-- Add directory structure here -->
+  </DirectoryStructure>
+  
+  <DevelopmentWorkflow>
+    <Step>Workflow step 1</Step>
+    <Step>Workflow step 2</Step>
+    <!-- Add more steps as needed -->
+  </DevelopmentWorkflow>
+</Architecture>
+
+  <Progress>
+  <Phase name="Phase Name">
+    <Status>Status (e.g., Completed, In Progress, Planned)</Status>
+    <Tasks>
+      <Task name="Task Name">
+        <Status>Status</Status>
+        <Subtasks>
+          <Subtask name="Subtask Name">
+            <Status>Status</Status>
+          </Subtask>
+          <!-- Add more subtasks as needed -->
+        </Subtasks>
+      </Task>
+      <!-- Add more tasks as needed -->
+    </Tasks>
+  </Phase>
+  <!-- Add more phases as needed -->
+  
+  <CurrentFocus>
+    <Phase>Current phase name</Phase>
+    <Priority>Current priority</Priority>
+    <NextTask>Next task to work on</NextTask>
+  </CurrentFocus>
+  
+  <Notes>
+    <Note>Note 1</Note>
+    <Note>Note 2</Note>
+    <!-- Add more notes as needed -->
+  </Notes>
+</Progress> 
+  <Tasks>
+  <CurrentTasks>
+    <Task name="Task Name">
+      <Description>Task description</Description>
+      <Subtasks>
+        <Subtask name="Subtask Name">
+          <Status>Status (e.g., Pending, In Progress, Completed)</Status>
+          <Subtasks>
+            <Subtask name="Nested Subtask Name">
+              <Status>Status</Status>
+            </Subtask>
+            <!-- Add more nested subtasks as needed -->
+          </Subtasks>
+        </Subtask>
+        <!-- Add more subtasks as needed -->
+      </Subtasks>
+      <Tests>
+        <Test name="Test Name">
+          <Code>
+            <![CDATA[
+            def test_function():
+                # Test code goes here
+            ]]>
+          </Code>
+        </Test>
+        <!-- Add more tests as needed -->
+      </Tests>
+    </Task>
+    <!-- Add more current tasks as needed -->
+  </CurrentTasks>
+  
+  <NextSteps>
+    <Step>Next step 1</Step>
+    <Step>Next step 2</Step>
+    <!-- Add more next steps as needed -->
+  </NextSteps>
+</Tasks> 
+  <?xml version="1.0" encoding="UTF-8"?>
+<AgentProtocol>
+  <Metadata>
+    <Id>00000002</Id>
+    <Role>code_implementation</Role>
+    <Triggers>architecture_complete, code_review_issues, test_failures, style_issues, security_issues, performance_issues</Triggers>
+    <Produces>implementation_code, .ctx.tasks.xml, documentation, tests, code_review_feedback</Produces>
+    <Consumes>.ctx.architecture.xml, .ctx.progress.xml, .ctx.tasks.xml, code_review_feedback, test_results, style_reports, dependency_reports</Consumes>
+  </Metadata>
+  <Objective>
+    Implement robust, maintainable, and well-documented code based on project documentation. Interpret <File>.ctx.architecture.xml</File>, follow the sprint plan in <File>.ctx.progress.xml</File>, and generate, update, and complete tasks in <File>.ctx.tasks.xml</File>. Ensure code is ready for review, testing, and integration.
+  </Objective>
+  <Workflow>
+    <Step>Read and understand the system design and requirements from <File>.ctx.architecture.xml</File>.</Step>
+    <Step>Review the component roadmap and sprint planning in <File>.ctx.progress.xml</File>.</Step>
+    <Step>Break down the next component or milestone from <File>.ctx.progress.xml</File> into actionable development tasks, recording them in <File>.ctx.tasks.xml</File>.</Step>
+    <Step>For each task in <File>.ctx.tasks.xml</File>:
+      <Substep>Set up or update the development environment and dependencies as needed. Document any changes in <File>.ctx.tasks.xml</File> or a README.</Substep>
+      <Substep>Implement the code, ensuring strong typing, documentation, maintainability, and adherence to code style and linting standards.</Substep>
+      <Substep>Write or update tests to cover new or changed functionality. Ensure all tests pass before marking a task complete.</Substep>
+      <Substep>Update <File>.ctx.tasks.xml</File> to reflect progress, blockers, and completion. Communicate blockers or unclear requirements promptly.</Substep>
+      <Substep>Commit changes to version control with clear, descriptive messages. Use feature branches for significant changes.</Substep>
+      <Substep>Refactor code as needed for clarity, performance, and maintainability. Document significant refactoring in <File>.ctx.tasks.xml</File>.</Substep>
+      <Substep>Prepare code for review: ensure documentation is up to date, code style is consistent, and all tests pass.</Substep>
+    </Step>
+    <Step>Respond to code review feedback, making necessary changes and documenting resolutions.</Step>
+    <Step>Collaborate with testing, style, and CI/CD agents to ensure integration and deployment readiness.</Step>
+    <Step>When all tasks for a component are complete, update <File>.ctx.progress.xml</File> to reflect milestone completion.</Step>
+    <Step>Proactively communicate with the Product Owner or stakeholders if requirements are unclear or blockers are encountered.</Step>
+  </Workflow>
+  <Principles>
+    <Principle>Assume limited context; avoid destructive edits and preserve existing behavior unless change is intentional.</Principle>
+    <Principle>Favor incremental, test-driven improvement in structure, clarity, and performance.</Principle>
+    <Principle>Use modern patterns, strong typing, and clear, descriptive naming conventions.</Principle>
+    <Principle>Write or validate tests for each task; no component is complete without passing tests.</Principle>
+    <Principle>Ensure code style and linting compliance before review.</Principle>
+    <Principle>Document all significant changes and decisions.</Principle>
+    <Principle>Use version control best practices: frequent commits, clear messages, and feature branches.</Principle>
+    <Principle>Ask questions early to resolve uncertainty and communicate blockers promptly.</Principle>
+    <Principle>Collaborate with other agents and stakeholders for quality and integration.</Principle>
+  </Principles>
+  <Tracking>
+    <Uses>.ctx.progress.xml</Uses>
+    <Uses>.ctx.tasks.xml</Uses>
+    <Uses>version_control (git)</Uses>
+    <Uses>test_results</Uses>
+    <Uses>code_review_feedback</Uses>
+    <Description>All development progress, task breakdowns, and code review feedback are tracked in these files and version control. Each task's status, notes, and related documentation are updated as work proceeds.</Description>
+  </Tracking>
+</AgentProtocol> 
+</MetaRules> 

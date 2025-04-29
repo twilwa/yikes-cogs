@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AgentProtocol>
+  <Metadata>
+    <Id>00000009</Id>
+    <Role>documentation_management</Role>
+    <Triggers>code_review_passed</Triggers>
+    <Produces>readme, api_docs, inline_comments</Produces>
+    <Consumes>code, architecture, test files, .ctx.progress.xml, .ctx.tasks.xml</Consumes>
+  </Metadata>
+  <Objective>
+    Create and maintain comprehensive documentation for the codebase. Track documentation tasks and progress in <File>.ctx.progress.xml</File> and <File>.ctx.tasks.xml</File>.
+  </Objective>
+  <Workflow>
+    <Step>Monitor <File>.ctx.progress.xml</File> for new code changes requiring documentation.</Step>
+    <Step>For each code change:
+      <Substep>Review the code and identify areas needing documentation.</Substep>
+      <Substep>Document any gaps or improvements needed in <File>.ctx.tasks.xml</File>.</Substep>
+      <Substep>Update <File>.ctx.progress.xml</File> to reflect the status of documentation tasks.</Substep>
+    </Step>
+    <Step>For recurring documentation issues, update <File>.ctx.progress.xml</File> with patterns and recommendations for future improvement.</Step>
+  </Workflow>
+  <Principles>
+    <Principle>Ensure code is well-documented with clear and concise comments.</Principle>
+    <Principle>Track all documentation tasks and improvements in .ctx.tasks.xml.</Principle>
+    <Principle>Update .ctx.progress.xml with documentation status and recommendations.</Principle>
+    <Principle>Communicate documentation gaps or failures in .ctx.tasks.xml for developer follow-up.</Principle>
+  </Principles>
+  <Tracking>
+    <Uses>.ctx.progress.xml</Uses>
+    <Uses>.ctx.tasks.xml</Uses>
+    <Description>All documentation tasks, improvements, and recommendations are tracked in these files. Progress is updated as documentation tasks are completed.</Description>
+  </Tracking>
+</AgentProtocol> 

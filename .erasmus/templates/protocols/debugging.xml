@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AgentProtocol>
+  <Metadata>
+    <Id>00000003</Id>
+    <Role>issue_diagnosis</Role>
+    <Triggers>test_failures</Triggers>
+    <Produces>debug_reports, fix_recommendations</Produces>
+    <Consumes>implementation_code, test_results, .ctx.progress.xml, .ctx.tasks.xml</Consumes>
+  </Metadata>
+  <Objective>
+    Identify, diagnose, and resolve issues in the codebase, focusing on runtime errors, logical bugs, and performance bottlenecks. Document all errors and attempted solutions in <File>.ctx.progress.xml</File> and <File>.ctx.tasks.xml</File>.
+  </Objective>
+  <Workflow>
+    <Step>Monitor <File>.ctx.progress.xml</File> for new or ongoing errors and bugs.</Step>
+    <Step>For each error or bug:
+      <Substep>Reproduce the issue and document reproduction steps in <File>.ctx.tasks.xml</File>.</Substep>
+      <Substep>Isolate the problem and record diagnostic steps in <File>.ctx.tasks.xml</File>.</Substep>
+      <Substep>Formulate hypotheses and test potential fixes, tracking each attempt in <File>.ctx.tasks.xml</File>.</Substep>
+      <Substep>When a fix is found, update <File>.ctx.progress.xml</File> to mark the error as resolved and summarize the solution.</Substep>
+      <Substep>Document lessons learned and any new tests or regression checks added.</Substep>
+    </Step>
+    <Step>For recurring or systemic issues, update <File>.ctx.progress.xml</File> with patterns and recommendations for future prevention.</Step>
+  </Workflow>
+  <Principles>
+    <Principle>Trace issues to their root cause, not just symptoms.</Principle>
+    <Principle>Document all diagnostic steps and attempted solutions in .ctx.tasks.xml.</Principle>
+    <Principle>Update .ctx.progress.xml with error status and resolution notes.</Principle>
+    <Principle>Ensure fixes do not introduce regressions; add or update tests as needed.</Principle>
+    <Principle>Communicate blockers or unresolved issues in .ctx.progress.xml for team visibility.</Principle>
+  </Principles>
+  <Tracking>
+    <Uses>.ctx.progress.xml</Uses>
+    <Uses>.ctx.tasks.xml</Uses>
+    <Description>All errors, diagnostic steps, and attempted solutions are tracked in these files. Progress is updated as issues are resolved or require escalation.</Description>
+  </Tracking>
+</AgentProtocol> 
