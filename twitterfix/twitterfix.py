@@ -40,7 +40,8 @@ class TwitterFix(commands.Cog):
             force_registration=True,
         )
         self.config.register_guild(**DEFAULT_GUILD)
-        self.watched_threads = {}  # Store thread IDs and whether they need title updates
+        # Dictionary to track threads that have already had their titles updated
+        self.updated_threads = set()
 
     async def red_delete_data_for_user(
         self, *, requester: RequestType, user_id: int
@@ -50,45 +51,34 @@ class TwitterFix(commands.Cog):
         pass
 
     @commands.Cog.listener()
-    async def on_thread_create(self, thread: discord.Thread) -> None:
-        """Monitor newly created threads for potential title updates."""
-        if not thread.guild:  # Ignore DM threads if they ever exist
-            return
-        
-        if await self.bot.cog_disabled_in_guild(self, thread.guild):
-            return
-            
-        guild_settings = await self.config.guild(thread.guild).all()
-        if not guild_settings["enabled"] or not guild_settings["title_updates_enabled"]:
-            return
-            
-        # Check if thread name contains "https://" which indicates it might be our auto-generated thread
-        if "https://" in thread.name:
-            # Add to watched threads
-            self.watched_threads[thread.id] = True
-            
-    @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
         """
         Serves two purposes:
-        1. Checks messages for URLs to create discussion threads
-        2. Checks for embeds in watched threads to update their titles
+        1. Processes embed messages in threads to update their titles
+        2. Checks messages for URLs to create discussion threads
         """
-        # First, handle thread title updates if this message is in a watched thread
-        if isinstance(message.channel, discord.Thread) and message.channel.id in self.watched_threads:
-            # Check if message has embeds and update thread title
-            if message.embeds and self.watched_threads[message.channel.id]:
-                for embed in message.embeds:
-                    if embed.title:
-                        # Found a title in an embed, update the thread name
-                        try:
-                            await message.channel.edit(name=embed.title[:100])  # Thread names limited to 100 chars
-                            # Mark this thread as processed
-                            self.watched_threads[message.channel.id] = False
-                            break
-                        except (discord.Forbidden, discord.HTTPException) as e:
-                            print(f"TwitterFix: Failed to update thread title: {e}")
-                            self.watched_threads[message.channel.id] = False
+        # First, handle thread title updates if title updates are enabled
+        if isinstance(message.channel, discord.Thread) and message.channel.guild:
+            # Check if thread title updates are enabled for this guild
+            guild_settings = await self.config.guild(message.channel.guild).all()
+            if (guild_settings["enabled"] and 
+                guild_settings["title_updates_enabled"] and
+                "https://" in message.channel.name and 
+                message.channel.id not in self.updated_threads):
+                
+                # Check if message has embeds
+                if message.embeds:
+                    for embed in message.embeds:
+                        if embed.title:
+                            # Found a title in an embed, update the thread name
+                            try:
+                                await message.channel.edit(name=embed.title[:100])  # Thread names limited to 100 chars
+                                # Mark this thread as updated so we don't try again
+                                self.updated_threads.add(message.channel.id)
+                                break
+                            except (discord.Forbidden, discord.HTTPException) as e:
+                                print(f"TwitterFix: Failed to update thread title: {e}")
+                                self.updated_threads.add(message.channel.id)
             return  # Don't process URL fixes for messages in threads
 
         # Standard URL processing logic follows
@@ -153,10 +143,6 @@ class TwitterFix(commands.Cog):
                     name=thread_title, auto_archive_duration=1440
                 )  # 1 day archive
                 
-                # Add to watched threads for title update if title updates are enabled
-                if guild_settings["title_updates_enabled"]:
-                    self.watched_threads[thread.id] = True
-                
                 # Send the modified URL into the thread
                 await thread.send(modified_url)
             except discord.Forbidden:
@@ -171,7 +157,7 @@ class TwitterFix(commands.Cog):
     @commands.group(name="twitterfix")
     @checks.admin_or_permissions(manage_guild=True)
     @commands.guild_only()
-    async def _twitterfix(self, ctx: commands.Context) -> None:
+    async def _twitterfix(self, ctx: commands.Context):
         """Configuration options for TwitterFix."""
         pass
 
@@ -198,6 +184,12 @@ class TwitterFix(commands.Cog):
             await self.config.guild(ctx.guild).title_updates_enabled.set(true_or_false)
             status = "enabled" if true_or_false else "disabled"
             await ctx.send(f"Thread title updates feature is now {status}.")
+            
+    @_twitterfix.command(name="clearcache")
+    async def _clearcache(self, ctx: commands.Context):
+        """Clear the cache of threads that have had their titles updated."""
+        self.updated_threads.clear()
+        await ctx.send("Thread title update cache has been cleared.")
 
     @_twitterfix.group(name="channel")
     async def _channel(self, ctx: commands.Context):
