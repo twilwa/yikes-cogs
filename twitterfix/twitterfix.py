@@ -1,5 +1,5 @@
 import re
-from typing import Literal, Optional
+from typing import Literal, Optional, NoReturn
 
 import discord
 from redbot.core import commands, Config, checks
@@ -13,7 +13,9 @@ RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 URL_REGEX = re.compile(r"https?://([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(/[^?\s]*)?(\?[^\s]*)?")
 
 DEFAULT_GUILD = {
-    "enabled": False,
+    "enabled": False,  # Master switch for everything
+    "url_mapping_enabled": False,  # Controls URL mapping feature
+    "title_updates_enabled": False,  # Controls thread title updating feature
     "monitored_channels": [],  # Empty list means all channels
     "url_map": {
         "twitter.com": "vxtwitter.com",
@@ -26,7 +28,7 @@ DEFAULT_GUILD = {
 
 class TwitterFix(commands.Cog):
     """
-    a simple url fixer
+    A cog that fixes social media links and updates thread titles.
     """
 
     def __init__(self, bot: Red) -> None:
@@ -42,7 +44,7 @@ class TwitterFix(commands.Cog):
 
     async def red_delete_data_for_user(
         self, *, requester: RequestType, user_id: int
-    ) -> None:
+    ) -> NoReturn:
         # This cog stores configuration per guild, not per user.
         # User data removal doesn't apply here.
         pass
@@ -57,7 +59,7 @@ class TwitterFix(commands.Cog):
             return
             
         guild_settings = await self.config.guild(thread.guild).all()
-        if not guild_settings["enabled"]:
+        if not guild_settings["enabled"] or not guild_settings["title_updates_enabled"]:
             return
             
         # Check if thread name contains "https://" which indicates it might be our auto-generated thread
@@ -73,7 +75,7 @@ class TwitterFix(commands.Cog):
         2. Checks for embeds in watched threads to update their titles
         """
         # First, handle thread title updates if this message is in a watched thread
-        if hasattr(message.channel, 'id') and message.channel.id in self.watched_threads:
+        if isinstance(message.channel, discord.Thread) and message.channel.id in self.watched_threads:
             # Check if message has embeds and update thread title
             if message.embeds and self.watched_threads[message.channel.id]:
                 for embed in message.embeds:
@@ -102,7 +104,7 @@ class TwitterFix(commands.Cog):
             return
 
         guild_settings = await self.config.guild(message.guild).all()
-        if not guild_settings["enabled"]:
+        if not guild_settings["enabled"] or not guild_settings["url_mapping_enabled"]:
             return
 
         monitored_channels = guild_settings["monitored_channels"]
@@ -151,8 +153,9 @@ class TwitterFix(commands.Cog):
                     name=thread_title, auto_archive_duration=1440
                 )  # 1 day archive
                 
-                # Add to watched threads for title update
-                self.watched_threads[thread.id] = True
+                # Add to watched threads for title update if title updates are enabled
+                if guild_settings["title_updates_enabled"]:
+                    self.watched_threads[thread.id] = True
                 
                 # Send the modified URL into the thread
                 await thread.send(modified_url)
@@ -165,22 +168,38 @@ class TwitterFix(commands.Cog):
 
     # --- Configuration Commands ---
 
-    @commands.group(name="twitterfixset", aliases=["tfixset"])
+    @commands.group(name="twitterfix")
     @checks.admin_or_permissions(manage_guild=True)
     @commands.guild_only()
-    async def _twitterfixset(self, ctx: commands.Context):
+    async def _twitterfix(self, ctx: commands.Context) -> None:
         """Configuration options for TwitterFix."""
         pass
 
-    @_twitterfixset.command(name="enable")
+    @_twitterfix.command(name="enable")
     async def _enable(self, ctx: commands.Context, true_or_false: bool):
-        """Enable or disable the TwitterFix cog for this server."""
+        """Enable or disable the TwitterFix cog entirely for this server."""
         if ctx.guild:
             await self.config.guild(ctx.guild).enabled.set(true_or_false)
             status = "enabled" if true_or_false else "disabled"
             await ctx.send(f"TwitterFix is now {status}.")
+            
+    @_twitterfix.command(name="enableurlmap")
+    async def _enable_urlmap(self, ctx: commands.Context, true_or_false: bool):
+        """Enable or disable just the URL mapping feature."""
+        if ctx.guild:
+            await self.config.guild(ctx.guild).url_mapping_enabled.set(true_or_false)
+            status = "enabled" if true_or_false else "disabled"
+            await ctx.send(f"URL mapping feature is now {status}.")
+            
+    @_twitterfix.command(name="enabletitleupdates")
+    async def _enable_titleupdates(self, ctx: commands.Context, true_or_false: bool):
+        """Enable or disable just the thread title update feature."""
+        if ctx.guild:
+            await self.config.guild(ctx.guild).title_updates_enabled.set(true_or_false)
+            status = "enabled" if true_or_false else "disabled"
+            await ctx.send(f"Thread title updates feature is now {status}.")
 
-    @_twitterfixset.group(name="channel")
+    @_twitterfix.group(name="channel")
     async def _channel(self, ctx: commands.Context):
         """
         Manage monitored channels.
@@ -265,7 +284,7 @@ class TwitterFix(commands.Cog):
 
     # --- URL Map Commands ---
 
-    @_twitterfixset.group(name="urlmap")
+    @_twitterfix.group(name="urlmap")
     async def _urlmap(self, ctx: commands.Context):
         """Manage the URL domain replacement mappings."""
         pass
@@ -277,7 +296,7 @@ class TwitterFix(commands.Cog):
         """
         Add or update a URL domain replacement.
 
-        Example: [p]twitterfixset urlmap add x.com vxtwitter.com
+        Example: [p]twitterfix urlmap add x.com vxtwitter.com
         """
         if not ctx.guild:
             return
@@ -317,7 +336,7 @@ class TwitterFix(commands.Cog):
         """
         Remove a URL domain replacement mapping.
 
-        Example: [p]twitterfixset urlmap remove x.com
+        Example: [p]twitterfix urlmap remove x.com
         """
         if not ctx.guild:
             return
@@ -333,14 +352,16 @@ class TwitterFix(commands.Cog):
 
     # --- Show Settings Command ---
 
-    @_twitterfixset.command(name="showsettings")
+    @_twitterfix.command(name="showsettings")
     async def _show_settings(self, ctx: commands.Context):
         """Show the current settings for TwitterFix."""
         if not ctx.guild:
             return
             
         settings = await self.config.guild(ctx.guild).all()
-        enabled = settings["enabled"]
+        master_enabled = settings["enabled"]
+        url_mapping_enabled = settings["url_mapping_enabled"]
+        title_updates_enabled = settings["title_updates_enabled"]
         channels = settings["monitored_channels"]
         url_map = settings["url_map"]
         title_format = settings["thread_title_format"]
@@ -369,7 +390,13 @@ class TwitterFix(commands.Cog):
         embed = discord.Embed(
             title="TwitterFix Settings", color=await ctx.embed_color()
         )
-        embed.add_field(name="Enabled", value=str(enabled), inline=True)
+        
+        # Show feature statuses
+        embed.add_field(name="Master Switch", value=str(master_enabled), inline=True)
+        embed.add_field(name="URL Mapping", value=str(url_mapping_enabled), inline=True)
+        embed.add_field(name="Thread Title Updates", value=str(title_updates_enabled), inline=True)
+        
+        # Show other settings 
         embed.add_field(name="Monitored Channels", value=channel_str, inline=False)
         embed.add_field(name="URL Mappings", value=map_str, inline=False)
         embed.add_field(
