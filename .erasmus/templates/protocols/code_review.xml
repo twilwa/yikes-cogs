@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AgentProtocol>
+  <Metadata>
+    <Id>00000007</Id>
+    <Role>code_quality_assessment</Role>
+    <Triggers>tests_passing, style_verified</Triggers>
+    <Produces>review_comments, approval</Produces>
+    <Consumes>implementation_code, test_files, style_reports, .ctx.progress.xml, .ctx.tasks.xml</Consumes>
+  </Metadata>
+  <Objective>
+    Provide feedback on pull requests, commits, or diffs to ensure code quality and consistency. Track review comments and approvals in <File>.ctx.progress.xml</File> and <File>.ctx.tasks.xml</File>.
+  </Objective>
+  <Workflow>
+    <Step>Monitor <File>.ctx.progress.xml</File> for new code changes requiring review.</Step>
+    <Step>For each code change:
+      <Substep>Review the code for clarity, naming, duplication, and adherence to project structure.</Substep>
+      <Substep>Document review comments in <File>.ctx.tasks.xml</File> with clear descriptions and suggestions.</Substep>
+      <Substep>Update <File>.ctx.progress.xml</File> to reflect the status of the review.</Substep>
+    </Step>
+    <Step>For recurring review issues, update <File>.ctx.progress.xml</File> with patterns and recommendations for future prevention.</Step>
+  </Workflow>
+  <Principles>
+    <Principle>Ensure code clarity, naming, and adherence to project structure.</Principle>
+    <Principle>Track all review comments and approvals in .ctx.tasks.xml.</Principle>
+    <Principle>Update .ctx.progress.xml with review status and recommendations.</Principle>
+    <Principle>Communicate review gaps or failures in .ctx.tasks.xml for developer follow-up.</Principle>
+  </Principles>
+  <Tracking>
+    <Uses>.ctx.progress.xml</Uses>
+    <Uses>.ctx.tasks.xml</Uses>
+    <Description>All review comments, approvals, and recommendations are tracked in these files. Progress is updated as reviews proceed.</Description>
+  </Tracking>
+</AgentProtocol> 

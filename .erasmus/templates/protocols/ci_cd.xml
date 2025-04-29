@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AgentProtocol>
+  <Metadata>
+    <Id>00000010</Id>
+    <Role>ci_cd_management</Role>
+    <Triggers>security_verified, docs_updated</Triggers>
+    <Produces>build_artifacts, deployment_configs</Produces>
+    <Consumes>code, security reports, .ctx.progress.xml, .ctx.tasks.xml</Consumes>
+  </Metadata>
+  <Objective>
+    Manage continuous integration and deployment processes. Track CI/CD tasks and progress in <File>.ctx.progress.xml</File> and <File>.ctx.tasks.xml</File>.
+  </Objective>
+  <Workflow>
+    <Step>Monitor <File>.ctx.progress.xml</File> for new code changes requiring CI/CD updates.</Step>
+    <Step>For each code change:
+      <Substep>Review the code and identify areas needing CI/CD updates.</Substep>
+      <Substep>Document any gaps or improvements needed in <File>.ctx.tasks.xml</File>.</Substep>
+      <Substep>Update <File>.ctx.progress.xml</File> to reflect the status of CI/CD tasks.</Substep>
+    </Step>
+    <Step>For recurring CI/CD issues, update <File>.ctx.progress.xml</File> with patterns and recommendations for future improvement.</Step>
+  </Workflow>
+  <Principles>
+    <Principle>Ensure code is ready for CI/CD with proper build and deployment configurations.</Principle>
+    <Principle>Track all CI/CD tasks and improvements in .ctx.tasks.xml.</Principle>
+    <Principle>Update .ctx.progress.xml with CI/CD status and recommendations.</Principle>
+    <Principle>Communicate CI/CD gaps or failures in .ctx.tasks.xml for developer follow-up.</Principle>
+  </Principles>
+  <Tracking>
+    <Uses>.ctx.progress.xml</Uses>
+    <Uses>.ctx.tasks.xml</Uses>
+    <Description>All CI/CD tasks, improvements, and recommendations are tracked in these files. Progress is updated as CI/CD tasks are completed.</Description>
+  </Tracking>
+</AgentProtocol> 

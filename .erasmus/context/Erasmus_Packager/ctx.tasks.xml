@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Tasks>
+  <CurrentTasks>
+    <Task name="Fix Packager Import Handling">
+      <Description>Fix issues with the packager's import handling to ensure imports are correctly formatted in the generated script.</Description>
+      <Subtasks>
+        <Subtask name="Fix build_script function">
+          <Status>Completed</Status>
+          <Notes>Updated the build_script function to properly format imports with the 'import' keyword and handle imports with dots correctly.</Notes>
+        </Subtask>
+        <Subtask name="Handle special cases">
+          <Status>Completed</Status>
+          <Notes>Added special case handling for timeit module.</Notes>
+        </Subtask>
+        <Subtask name="Remove relative imports">
+          <Status>In Progress</Status>
+          <Notes>Attempted to remove relative imports from the generated script since they're not needed when all code is combined. Still encountering issues.</Notes>
+        </Subtask>
+      </Subtasks>
+      <Tests>
+        <Test name="Test import formatting">
+          <Code>
+            <![CDATA[
+            def test_import_formatting():
+                from packager.builder import build_script
+                from packager.parser import ImportSet
+                
+                # Test standard library imports
+                imports = ImportSet()
+                imports.stdlib.add("os")
+                imports.stdlib.add("sys")
+                imports.stdlib.add("logging")
+                
+                # Test third-party imports
+                imports.third_party.add("typer")
+                imports.third_party.add("rich")
+                
+                # Test local imports
+                imports.local.add("local_module")
+                
+                # Test imports with dots
+                imports.stdlib.add("xml.dom")
+                imports.stdlib.add("xml.dom.minidom")
+                
+                # Test special case
+                imports.stdlib.add("logging.timeit")
+                
+                content = "print('Hello, world!')"
+                
+                script = build_script(imports, content)
+                
+                # Check that imports are correctly formatted
+                assert "import os" in script
+                assert "import sys" in script
+                assert "import logging" in script
+                assert "import typer" in script
+                assert "import rich" in script
+                assert "import local_module" in script
+                assert "from xml import dom" in script
+                assert "from xml.dom import minidom" in script
+                assert "import timeit" in script  # Special case
+                
+                # Check that relative imports are not included
+                assert "from . import" not in script
+            ]]>
+          </Code>
+        </Test>
+      </Tests>
+    </Task>
+    <Task name="Fix Relative Import Issue">
+      <Status>In Progress</Status>
+      <Description>Fix the persistent issue with relative imports being incorrectly included in the generated script.</Description>
+      <Subtasks>
+        <Subtask name="Investigate import collection">
+          <Status>In Progress</Status>
+          <Notes>Need to investigate where relative imports are being collected and ensure they're properly filtered out before being passed to build_script.</Notes>
+        </Subtask>
+        <Subtask name="Review ImportVisitor">
+          <Status>Planned</Status>
+          <Notes>Review the ImportVisitor class to ensure it's correctly identifying and categorizing relative imports.</Notes>
+        </Subtask>
+        <Subtask name="Review package function">
+          <Status>Planned</Status>
+          <Notes>Review the package function to ensure it's correctly filtering out relative imports before passing them to build_script.</Notes>
+        </Subtask>
+        <Subtask name="Add debug logging">
+          <Status>Planned</Status>
+          <Notes>Add debug logging to track how imports are being collected and processed.</Notes>
+        </Subtask>
+      </Subtasks>
+      <Tests>
+        <Test name="Test relative import handling">
+          <Code>
+            <![CDATA[
+            def test_relative_import_handling():
+                from packager.parser import ImportVisitor
+                from packager.builder import build_script
+                import ast
+                
+                # Test code with relative imports
+                code = """
+                from . import module
+                from .. import parent_module
+                from .submodule import function
+                """
+                
+                # Parse the code
+                tree = ast.parse(code)
+                visitor = ImportVisitor(set())
+                visitor.visit(tree)
+                
+                # Check that relative imports are correctly identified
+                assert len(visitor.imports.relative) == 3
+                
+                # Test that relative imports are not included in the generated script
+                content = "print('Hello, world!')"
+                script = build_script(visitor.imports, content)
+                
+                # Check that relative imports are not included
+                assert "from . import" not in script
+                assert "from .. import" not in script
+                assert "from .submodule import" not in script
+            ]]>
+          </Code>
+        </Test>
+      </Tests>
+    </Task>
+    <Task name="Fix File Processing Issues">
+      <Status>In Progress</Status>
+      <Description>Fix issues with file processing in the packager</Description>
+      <Status>In Progress</Status>
+      <Subtasks>
+        <Subtask name="Fix Non-Python File Handling">
+          <Status>In Progress</Status>
+          <Description>Fix issues with non-Python files being processed as Python files</Description>
+          <Steps>
+            <Step>Add strict file extension validation in parse_imports</Step>
+            <Step>Add better file filtering in generate_script</Step>
+            <Step>Add validation to ensure file paths are actual files</Step>
+            <Step>Add tests for non-Python file handling</Step>
+          </Steps>
+          <Tests>
+            <Test name="test_non_python_file_handling">
+              <Code>
+                <![CDATA[
+                def test_non_python_file_handling():
+                    # Test that non-Python files are properly skipped
+                    packager = ScriptPackager()
+                    
+                    # Create test files
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        # Create a Python file
+                        py_file = Path(tmpdir) / "test.py"
+                        py_file.write_text("print('hello')")
+                        
+                        # Create a non-Python file
+                        txt_file = Path(tmpdir) / "test.txt"
+                        txt_file.write_text("not python")
+                        
+                        # Create a file with Python content but wrong extension
+                        fake_py = Path(tmpdir) / "test.fake"
+                        fake_py.write_text("print('fake')")
+                        
+                        # Package the directory
+                        output = packager.package_scripts(tmpdir)
+                        
+                        # Verify only Python file was processed
+                        assert "print('hello')" in output
+                        assert "print('fake')" not in output
+                        assert "not python" not in output
+                ]]>
+              </Code>
+            </Test>
+          </Tests>
+        </Subtask>
+        <Subtask name="Fix sys.__file__ Access">
+          <Status>In Progress</Status>
+          <Description>Fix issues with sys.__file__ access during import processing</Description>
+          <Steps>
+            <Step>Add proper error handling for sys.__file__ access</Step>
+            <Step>Use alternative method to determine module paths</Step>
+            <Step>Add tests for sys.__file__ handling</Step>
+          </Steps>
+          <Tests>
+            <Test name="test_sys_file_handling">
+              <Code>
+                <![CDATA[
+                def test_sys_file_handling():
+                    # Test that sys.__file__ access errors are properly handled
+                    packager = ScriptPackager()
+                    
+                    # Create test file that tries to access sys.__file__
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        test_file = Path(tmpdir) / "test.py"
+                        test_file.write_text("""
+                            import sys
+                            print(sys.__file__)
+                        """)
+                        
+                        # Package should not fail
+                        output = packager.package_scripts(test_file)
+                        assert "import sys" in output
+                ]]>
+              </Code>
+            </Test>
+          </Tests>
+        </Subtask>
+        <Subtask name="Fix Content vs Path Handling">
+          <Status>In Progress</Status>
+          <Description>Fix issues with content being treated as file paths</Description>
+          <Steps>
+            <Step>Add validation to ensure paths are actual files</Step>
+            <Step>Add type checking for content vs paths</Step>
+            <Step>Add tests for content vs path handling</Step>
+          </Steps>
+          <Tests>
+            <Test name="test_content_vs_path_handling">
+              <Code>
+                <![CDATA[
+                def test_content_vs_path_handling():
+                    # Test that content is not treated as paths
+                    packager = ScriptPackager()
+                    
+                    # Test with actual file
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        test_file = Path(tmpdir) / "test.py"
+                        test_file.write_text("print('hello')")
+                        
+                        # Package with file path
+                        output1 = packager.package_scripts(test_file)
+                        assert "print('hello')" in output1
+                        
+                        # Package with content string
+                        content = "print('world')"
+                        output2 = packager.package_scripts(content)
+                        assert "print('world')" in output2
+                ]]>
+              </Code>
+            </Test>
+          </Tests>
+        </Subtask>
+      </Subtasks>
+    </Task>
+    <Task name="Fix Script Packaging">
+      <Status>In Progress</Status>
+      <Description>Fix issues in the script packaging process to properly handle code merging and dependencies</Description>
+      <Status>In Progress</Status>
+      <Subtasks>
+        <Subtask name="Fix Duplicate Code Sections">
+          <Status>In Progress</Status>
+          <Description>Modify packager to properly handle duplicate code sections</Description>
+          <Steps>
+            <Step>Implement code section tracking in builder.py</Step>
+            <Step>Add hash-based duplicate detection for code sections</Step>
+            <Step>Modify extract_code_body() to skip already processed sections</Step>
+            <Step>Add tests to verify no duplicate code sections in output</Step>
+          </Steps>
+        </Subtask>
+        <Subtask name="Fix Import Tracking">
+          <Status>In Progress</Status>
+          <Description>Improve import tracking and deduplication</Description>
+          <Steps>
+            <Step>Enhance ImportSet class to better track processed imports</Step>
+            <Step>Add import origin tracking to detect duplicates</Step>
+            <Step>Modify format_imports() to handle import deduplication</Step>
+            <Step>Add tests for import deduplication</Step>
+          </Steps>
+        </Subtask>
+        <Subtask name="Fix Dependency Ordering">
+          <Status>In Progress</Status>
+          <Description>Ensure proper dependency order in merged output</Description>
+          <Steps>
+            <Step>Enhance analyze_dependencies() to build complete dependency graph</Step>
+            <Step>Implement topological sorting for file ordering</Step>
+            <Step>Add cycle detection in dependency resolution</Step>
+            <Step>Add tests for dependency ordering</Step>
+          </Steps>
+        </Subtask>
+      </Subtasks>
+      <Tests>
+        <Test name="test_no_duplicate_code">
+          <Code>
+            <![CDATA[
+            def test_no_duplicate_code():
+                # Test that output has no duplicate code sections
+                packager = ScriptPackager()
+                output = packager.package_scripts(test_files)
+                # Count occurrences of each code section
+                section_counts = {}
+                for section in extract_code_sections(output):
+                    section_counts[section] = section_counts.get(section, 0) + 1
+                # Assert no duplicates
+                assert all(count == 1 for count in section_counts.values())
+            ]]>
+          </Code>
+        </Test>
+        <Test name="test_import_deduplication">
+          <Code>
+            <![CDATA[
+            def test_import_deduplication():
+                # Test that imports are properly deduplicated
+                packager = ScriptPackager()
+                output = packager.package_scripts(test_files)
+                imports = extract_imports(output)
+                # Assert no duplicate imports
+                assert len(imports) == len(set(imports))
+            ]]>
+          </Code>
+        </Test>
+        <Test name="test_dependency_order">
+          <Code>
+            <![CDATA[
+            def test_dependency_order():
+                # Test that files are ordered by dependencies
+                packager = ScriptPackager()
+                output = packager.package_scripts(test_files)
+                # Extract file order
+                file_order = extract_file_order(output)
+                # Assert dependencies come before dependents
+                for i, file in enumerate(file_order):
+                    deps = get_dependencies(file)
+                    for dep in deps:
+                        assert file_order.index(dep) < i
+            ]]>
+          </Code>
+        </Test>
+      </Tests>
+    </Task>
+  <Task name="Testing & Validation for Edge Cases">
+      <Description>Expand test coverage for relative import handling, file validation, and error handling in the packager.</Description>
+      <Status>In Progress</Status>
+    </Task>
+  </CurrentTasks>
+  
+  <Note>The packager is stable for most workflows, with only edge-case improvements and tests remaining.</Note>
+  <NextSteps>
+    <Step>Implement strict file extension validation in parse_imports</Step>
+    <Step>Add proper error handling for sys.__file__ access</Step>
+    <Step>Add validation to ensure paths are actual files</Step>
+  </NextSteps>
+</Tasks> 

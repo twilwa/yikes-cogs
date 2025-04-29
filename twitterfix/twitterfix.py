@@ -30,6 +30,7 @@ class TwitterFix(commands.Cog):
     """
 
     def __init__(self, bot: Red) -> None:
+        super().__init__()
         self.bot = bot
         self.config = Config.get_conf(
             self,
@@ -37,17 +38,58 @@ class TwitterFix(commands.Cog):
             force_registration=True,
         )
         self.config.register_guild(**DEFAULT_GUILD)
+        self.watched_threads = {}  # Store thread IDs and whether they need title updates
 
     async def red_delete_data_for_user(
         self, *, requester: RequestType, user_id: int
     ) -> None:
         # This cog stores configuration per guild, not per user.
         # User data removal doesn't apply here.
-        super().red_delete_data_for_user(requester=requester, user_id=user_id)
+        pass
 
     @commands.Cog.listener()
+    async def on_thread_create(self, thread: discord.Thread) -> None:
+        """Monitor newly created threads for potential title updates."""
+        if not thread.guild:  # Ignore DM threads if they ever exist
+            return
+        
+        if await self.bot.cog_disabled_in_guild(self, thread.guild):
+            return
+            
+        guild_settings = await self.config.guild(thread.guild).all()
+        if not guild_settings["enabled"]:
+            return
+            
+        # Check if thread name contains "https://" which indicates it might be our auto-generated thread
+        if "https://" in thread.name:
+            # Add to watched threads
+            self.watched_threads[thread.id] = True
+            
+    @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
-        """Checks messages for specified URLs and creates a discussion thread."""
+        """
+        Serves two purposes:
+        1. Checks messages for URLs to create discussion threads
+        2. Checks for embeds in watched threads to update their titles
+        """
+        # First, handle thread title updates if this message is in a watched thread
+        if hasattr(message.channel, 'id') and message.channel.id in self.watched_threads:
+            # Check if message has embeds and update thread title
+            if message.embeds and self.watched_threads[message.channel.id]:
+                for embed in message.embeds:
+                    if embed.title:
+                        # Found a title in an embed, update the thread name
+                        try:
+                            await message.channel.edit(name=embed.title[:100])  # Thread names limited to 100 chars
+                            # Mark this thread as processed
+                            self.watched_threads[message.channel.id] = False
+                            break
+                        except (discord.Forbidden, discord.HTTPException) as e:
+                            print(f"TwitterFix: Failed to update thread title: {e}")
+                            self.watched_threads[message.channel.id] = False
+            return  # Don't process URL fixes for messages in threads
+
+        # Standard URL processing logic follows
         if message.guild is None:  # Ignore DMs
             return
         if message.author.bot:  # Ignore bots
@@ -95,7 +137,7 @@ class TwitterFix(commands.Cog):
             if not channel_perms.create_public_threads:
                 # Maybe log this or notify an admin channel? For now, just return.
                 print(
-                    f"TwitterFix: Missing 'Create Public Threads' permission in {message.channel.name} ({message.guild.name})"
+                    f"TwitterFix: Missing 'Create Public Threads' permission in channel"
                 )
                 return
 
@@ -108,11 +150,15 @@ class TwitterFix(commands.Cog):
                 thread = await message.create_thread(
                     name=thread_title, auto_archive_duration=1440
                 )  # 1 day archive
+                
+                # Add to watched threads for title update
+                self.watched_threads[thread.id] = True
+                
                 # Send the modified URL into the thread
                 await thread.send(modified_url)
             except discord.Forbidden:
                 print(
-                    f"TwitterFix: Failed to create thread or send message due to permissions in {message.channel.name} ({message.guild.name})"
+                    f"TwitterFix: Failed to create thread or send message due to permissions"
                 )
             except discord.HTTPException as e:
                 print(f"TwitterFix: Failed to create thread or send message: {e}")
@@ -129,9 +175,10 @@ class TwitterFix(commands.Cog):
     @_twitterfixset.command(name="enable")
     async def _enable(self, ctx: commands.Context, true_or_false: bool):
         """Enable or disable the TwitterFix cog for this server."""
-        await self.config.guild(ctx.guild).enabled.set(true_or_false)
-        status = "enabled" if true_or_false else "disabled"
-        await ctx.send(f"TwitterFix is now {status}.")
+        if ctx.guild:
+            await self.config.guild(ctx.guild).enabled.set(true_or_false)
+            status = "enabled" if true_or_false else "disabled"
+            await ctx.send(f"TwitterFix is now {status}.")
 
     @_twitterfixset.group(name="channel")
     async def _channel(self, ctx: commands.Context):
@@ -146,40 +193,46 @@ class TwitterFix(commands.Cog):
     @_channel.command(name="add")
     async def _channel_add(self, ctx: commands.Context, channel: discord.TextChannel):
         """Add a channel to the monitored list."""
-        async with self.config.guild(ctx.guild).monitored_channels() as channels:
-            if channel.id not in channels:
-                channels.append(channel.id)
-                await ctx.send(f"{channel.mention} will now be monitored.")
-            else:
-                await ctx.send(f"{channel.mention} is already being monitored.")
+        if ctx.guild:
+            async with self.config.guild(ctx.guild).monitored_channels() as channels:
+                if channel.id not in channels:
+                    channels.append(channel.id)
+                    await ctx.send(f"{channel.mention} will now be monitored.")
+                else:
+                    await ctx.send(f"{channel.mention} is already being monitored.")
 
     @_channel.command(name="remove")
     async def _channel_remove(
         self, ctx: commands.Context, channel: discord.TextChannel
     ):
         """Remove a channel from the monitored list."""
-        async with self.config.guild(ctx.guild).monitored_channels() as channels:
-            if channel.id in channels:
-                channels.remove(channel.id)
-                await ctx.send(f"{channel.mention} will no longer be monitored.")
-                if not channels:
-                    await ctx.send(
-                        "No channels are specifically monitored. All channels are now active."
-                    )
-            else:
-                await ctx.send(f"{channel.mention} was not in the monitored list.")
+        if ctx.guild:
+            async with self.config.guild(ctx.guild).monitored_channels() as channels:
+                if channel.id in channels:
+                    channels.remove(channel.id)
+                    await ctx.send(f"{channel.mention} will no longer be monitored.")
+                    if not channels:
+                        await ctx.send(
+                            "No channels are specifically monitored. All channels are now active."
+                        )
+                else:
+                    await ctx.send(f"{channel.mention} was not in the monitored list.")
 
     @_channel.command(name="clear")
     async def _channel_clear(self, ctx: commands.Context):
         """Clear the monitored channel list, making the bot monitor all channels."""
-        await self.config.guild(ctx.guild).monitored_channels.set([])
-        await ctx.send(
-            "Monitored channel list cleared. The bot will now monitor all channels."
-        )
+        if ctx.guild:
+            await self.config.guild(ctx.guild).monitored_channels.set([])
+            await ctx.send(
+                "Monitored channel list cleared. The bot will now monitor all channels."
+            )
 
     @_channel.command(name="list")
     async def _channel_list(self, ctx: commands.Context):
         """List the channels currently being monitored."""
+        if not ctx.guild:
+            return
+            
         channels = await self.config.guild(ctx.guild).monitored_channels()
         if not channels:
             await ctx.send(
@@ -226,6 +279,9 @@ class TwitterFix(commands.Cog):
 
         Example: [p]twitterfixset urlmap add x.com vxtwitter.com
         """
+        if not ctx.guild:
+            return
+            
         original_domain = original_domain.lower().strip("/")  # Normalize
         replacement_domain = replacement_domain.lower().strip("/")  # Normalize
 
@@ -263,6 +319,9 @@ class TwitterFix(commands.Cog):
 
         Example: [p]twitterfixset urlmap remove x.com
         """
+        if not ctx.guild:
+            return
+            
         original_domain = original_domain.lower().strip("/")  # Normalize
 
         async with self.config.guild(ctx.guild).url_map() as url_map:
@@ -277,6 +336,9 @@ class TwitterFix(commands.Cog):
     @_twitterfixset.command(name="showsettings")
     async def _show_settings(self, ctx: commands.Context):
         """Show the current settings for TwitterFix."""
+        if not ctx.guild:
+            return
+            
         settings = await self.config.guild(ctx.guild).all()
         enabled = settings["enabled"]
         channels = settings["monitored_channels"]

@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Tasks>
+  <CurrentTasks>
+    <Task> 
+      <Name>Environment and Path Management</Name>
+      <Description>Implement environment variable management with validation and type safety.</Description>
+      <Subtasks>
+        <Subtask>
+          <Name>Create environment variable schema</Name>
+          <Status>Completed</Status>
+          <Subtasks>
+            <Subtask>
+              <Name>Define required variables</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Define optional variables</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Define variable types and constraints</Name>
+              <Status>Completed</Status>
+            </Subtask>
+          </Subtasks>
+        </Subtask>
+        <Subtask>
+          <Name>Implement environment loading</Name>
+          <Status>Completed</Status>
+          <Subtasks>
+            <Subtask>
+              <Name>Load from .env file</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Load from system environment</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Handle missing variables</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Validate variable types</Name>
+              <Status>Completed</Status>
+            </Subtask>
+          </Subtasks>
+        </Subtask>
+        <Subtask>
+          <Name>Add environment validation</Name>
+          <Status>Completed</Status>
+          <Subtasks>
+            <Subtask>
+              <Name>Type checking</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Required field validation</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Format validation</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Value range validation</Name>
+              <Status>Completed</Status>
+            </Subtask>
+          </Subtasks>
+        </Subtask>
+      </Subtasks>
+      <Tests>
+        <Test>
+          <Name>Test environment loading</Name>
+          <Code>
+            <![CDATA[
+            def test_load_environment():
+                # Test loading from .env
+                # Test loading from system
+                # Test missing variables
+                # Test invalid types
+            ]]>
+          </Code>
+        </Test>
+        <Test>
+          <Name>Test environment validation</Name>
+          <Code>
+            <![CDATA[
+            def test_validate_environment():
+                # Test type validation
+                # Test required fields
+                # Test format validation
+                # Test value ranges
+            ]]>
+          </Code>
+        </Test>
+      </Tests>
+    </Task>
+    <Task>
+      <Name>Path Management</Name>
+      <Description>Implement centralized path management with validation and sanitization.</Description>
+      <Subtasks>
+        <Subtask>
+          <Name>Create path configuration</Name>
+          <Status>Completed</Status>
+          <Subtasks>
+            <Subtask>
+              <Name>Define base paths</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Define relative paths</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Define path templates</Name>
+              <Status>Completed</Status>
+            </Subtask>
+          </Subtasks>
+        </Subtask>
+        <Subtask>
+          <Name>Implement path resolution</Name>
+          <Status>Completed</Status>
+          <Subtasks>
+            <Subtask>
+              <Name>Resolve absolute paths</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Resolve relative paths</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Handle path templates</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Handle path variables</Name>
+              <Status>Completed</Status>
+            </Subtask>
+          </Subtasks>
+        </Subtask>
+        <Subtask>
+          <Name>Add path validation</Name>
+          <Status>Completed</Status>
+          <Subtasks>
+            <Subtask>
+              <Name>Path existence check</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Path permission check</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Path sanitization</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Path normalization</Name>
+              <Status>Completed</Status>
+            </Subtask>
+          </Subtasks>
+        </Subtask>
+      </Subtasks>
+      <Tests>
+        <Test>
+          <Name>Test path resolution</Name>
+          <Code>
+            <![CDATA[
+            def test_resolve_paths():
+                # Test absolute paths
+                # Test relative paths
+                # Test path templates
+                # Test path variables
+            ]]>
+          </Code>
+        </Test>
+        <Test>
+          <Name>Test path validation</Name>
+          <Code>
+            <![CDATA[
+            def test_validate_paths():
+                # Test path existence
+                # Test permissions
+                # Test sanitization
+                # Test normalization
+            ]]>
+          </Code>
+        </Test>
+      </Tests>
+    </Task>
+    <Task>
+      <Name>Error Handling</Name>
+      <Description>Implement robust error handling for environment and path operations.</Description>
+      <Subtasks>
+        <Subtask>
+          <Name>Define error types</Name>
+          <Status>Completed</Status>
+          <Subtasks>
+            <Subtask>
+              <Name>Define environment errors</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Define path errors</Name>
+              <Status>Completed</Status>
+            </Subtask>
+            <Subtask>
+              <Name>Define validation errors</Name>
+              <Status>Completed</Status>
+            </Subtask>
+          </Subtasks>
+        </Subtask>
+        <Subtask>
+          <Name>Implement error handling logic</Name>
+          <Status>Completed</Status>
+        </Subtask>
+        <Subtask>
+          <Name>Integrate error handling into CLI</Name>
+          <Status>Completed</Status>
+        </Subtask>
+      </Subtasks>
+    </Task>
+    <Task>
+      <Name>Context Management</Name>
+      <Description>Implement context file management and operations.</Description>
+      <Subtasks>
+        <Subtask>
+          <Name>Implement context.py</Name>
+          <Status>Completed</Status>
+        </Subtask>
+        <Subtask>
+          <Name>Implement context file parsing</Name>
+          <Status>Completed</Status>
+        </Subtask>
+        <Subtask>
+          <Name>Add ASCII sanitization</Name>
+          <Status>Completed</Status>
+        </Subtask>
+      </Subtasks>
+      <Tests>
+        <Test>
+          <Name>Test context file operations</Name>
+          <Code>
+            <![CDATA[
+            def test_context_file_ops():
+                # Test context creation
+                # Test context loading
+                # Test context editing
+            ]]>
+          </Code>
+        </Test>
+      </Tests>
+    </Task>
+    <Task>
+      <Name>Protocol Management</Name>
+      <Description>Implement protocol file management and operations.</Description>
+      <Subtasks>
+        <Subtask>
+          <Name>Implement protocols.py</Name>
+          <Status>Completed</Status>
+        </Subtask>
+        <Subtask>
+          <Name>Add protocol validation</Name>
+          <Status>Completed</Status>
+        </Subtask>
+        <Subtask>
+          <Name>Implement protocol storage</Name>
+          <Status>Completed</Status>
+        </Subtask>
+        <Subtask>
+          <Name>Add protocol versioning</Name>
+          <Status>Completed</Status>
+        </Subtask>
+      </Subtasks>
+      <Tests>
+        <Test>
+          <Name>Test protocol file operations</Name>
+          <Code>
+            <![CDATA[
+            def test_protocol_file_ops():
+                # Test protocol creation
+                # Test protocol loading
+                # Test protocol editing
+            ]]>
+          </Code>
+        </Test>
+      </Tests>
+    </Task>
+    <Task>
+      <Name>File Monitor Service</Name>
+      <Description>Implement file monitoring and rules file merging.</Description>
+      <Subtasks>
+        <Subtask>
+          <Name>Implement file_monitor.py</Name>
+          <Status>Completed</Status>
+        </Subtask>
+        <Subtask>
+          <Name>Add file watching functionality</Name>
+          <Status>Completed</Status>
+        </Subtask>
+        <Subtask>
+          <Name>Implement event handling</Name>
+          <Status>Completed</Status>
+        </Subtask>
+        <Subtask>
+          <Name>Add debouncing</Name>
+          <Status>Completed</Status>
+        </Subtask>
+        <Subtask>
+          <Name>Refactor to use template/merge pattern for rules file updates</Name>
+          <Status>Completed</Status>
+        </Subtask>
+      </Subtasks>
+      <Tests>
+        <Test>
+          <Name>Test file monitoring</Name>
+          <Code>
+            <![CDATA[
+            def test_file_monitoring():
+                # Test file change detection
+                # Test rules file merging
+            ]]>
+          </Code>
+        </Test>
+      </Tests>
+    </Task>
+    <Task>
+      <Name>Setup and CLI</Name>
+      <Description>Implement setup workflow and CLI commands.</Description>
+      <Subtasks>
+        <Subtask>
+          <Name>Implement setup_commands.py</Name>
+          <Status>Completed</Status>
+        </Subtask>
+        <Subtask>
+          <Name>Implement CLI commands</Name>
+          <Status>Completed</Status>
+        </Subtask>
+        <Subtask>
+          <Name>Implement user interaction</Name>
+          <Status>Completed</Status>
+        </Subtask>
+      </Subtasks>
+      <Tests>
+        <Test>
+          <Name>Test CLI operations</Name>
+          <Code>
+            <![CDATA[
+            def test_cli_ops():
+                # Test setup workflow
+                # Test command parsing
+                # Test user interaction
+            ]]>
+          </Code>
+        </Test>
+      </Tests>
+    </Task>
+  </CurrentTasks>
+  <NextPriority>Update and expand tests for all modules. All core features are working.</NextPriority>
+</Tasks> 

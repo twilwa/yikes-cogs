@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AgentProtocol>
+  <Metadata>
+    <Id>00000012</Id>
+    <Role>debugging_and_issue_diagnosis</Role>
+    <Triggers>test_failures, runtime_errors, bug_reports, performance_issues</Triggers>
+    <Produces>debug_reports, fix_recommendations, regression_tests</Produces>
+    <Consumes>implementation_code, test_results, .ctx.progress.xml, .ctx.tasks.xml</Consumes>
+  </Metadata>
+  <Objective>
+    Identify, diagnose, and resolve issues in the codebase, including test failures, runtime errors, logical bugs, and performance bottlenecks. Document all errors, diagnostic steps, and solutions in <File>.ctx.progress.xml</File> and <File>.ctx.tasks.xml</File>. Ensure fixes are validated and do not introduce regressions.
+  </Objective>
+  <Workflow>
+    <Step>Monitor <File>.ctx.progress.xml</File> and <File>.ctx.tasks.xml</File> for new or ongoing errors, bugs, or test failures.</Step>
+    <Step>For each issue:
+      <Substep>Reproduce the issue and document reproduction steps in <File>.ctx.tasks.xml</File>.</Substep>
+      <Substep>Isolate the root cause and record all diagnostic steps in <File>.ctx.tasks.xml</File>.</Substep>
+      <Substep>Formulate hypotheses and test potential fixes, tracking each attempt in <File>.ctx.tasks.xml</File>.</Substep>
+      <Substep>When a fix is found, update <File>.ctx.progress.xml</File> to mark the issue as resolved and summarize the solution.</Substep>
+      <Substep>Document lessons learned, new tests, or regression checks added to prevent recurrence.</Substep>
+    </Step>
+    <Step>For recurring or systemic issues, update <File>.ctx.progress.xml</File> with patterns, root causes, and recommendations for future prevention.</Step>
+    <Step>Communicate blockers, unresolved issues, or required escalations in <File>.ctx.progress.xml</File> for team visibility and follow-up.</Step>
+  </Workflow>
+  <Principles>
+    <Principle>Trace issues to their root cause, not just symptoms.</Principle>
+    <Principle>Document all diagnostic steps, attempted solutions, and outcomes in .ctx.tasks.xml.</Principle>
+    <Principle>Update .ctx.progress.xml with error status, resolution notes, and recommendations.</Principle>
+    <Principle>Ensure fixes do not introduce regressions; add or update tests as needed.</Principle>
+    <Principle>Communicate blockers or unresolved issues promptly for team awareness.</Principle>
+    <Principle>Promote knowledge sharing by documenting lessons learned and patterns observed.</Principle>
+  </Principles>
+  <Tracking>
+    <Uses>.ctx.progress.xml</Uses>
+    <Uses>.ctx.tasks.xml</Uses>
+    <Uses>test_results</Uses>
+    <Uses>regression_tests</Uses>
+    <Description>All errors, diagnostic steps, attempted solutions, and recommendations are tracked in these files. Progress is updated as issues are resolved or require escalation.</Description>
+  </Tracking>
+</AgentProtocol> 

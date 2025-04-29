@@ -1,0 +1,37 @@
+<Tasks>
+  <CurrentTasks>
+    <Task name="Task Name">
+      <Description>Task description</Description>
+      <Subtasks>
+        <Subtask name="Subtask Name">
+          <Status>Status (e.g., Pending, In Progress, Completed)</Status>
+          <Subtasks>
+            <Subtask name="Nested Subtask Name">
+              <Status>Status</Status>
+            </Subtask>
+            <!-- Add more nested subtasks as needed -->
+          </Subtasks>
+        </Subtask>
+        <!-- Add more subtasks as needed -->
+      </Subtasks>
+      <Tests>
+        <Test name="Test Name">
+          <Code>
+            <![CDATA[
+            def test_function():
+                # Test code goes here
+            ]]>
+          </Code>
+        </Test>
+        <!-- Add more tests as needed -->
+      </Tests>
+    </Task>
+    <!-- Add more current tasks as needed -->
+  </CurrentTasks>
+  
+  <NextSteps>
+    <Step>Next step 1</Step>
+    <Step>Next step 2</Step>
+    <!-- Add more next steps as needed -->
+  </NextSteps>
+</Tasks> 

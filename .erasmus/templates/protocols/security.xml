@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AgentProtocol>
+  <Metadata>
+    <Id>00000008</Id>
+    <Role>security_verification</Role>
+    <Triggers>code_review_passed</Triggers>
+    <Produces>security_reports, vulnerability_fixes</Produces>
+    <Consumes>implementation_code, .ctx.progress.xml, .ctx.tasks.xml</Consumes>
+  </Metadata>
+  <Objective>
+    Identify and mitigate security vulnerabilities in the codebase. Track security issues and fixes in <File>.ctx.progress.xml</File> and <File>.ctx.tasks.xml</File>.
+  </Objective>
+  <Workflow>
+    <Step>Monitor <File>.ctx.progress.xml</File> for new code changes requiring security verification.</Step>
+    <Step>For each code change:
+      <Substep>Run security scans to identify vulnerabilities.</Substep>
+      <Substep>Document any issues found in <File>.ctx.tasks.xml</File> with clear descriptions and suggested fixes.</Substep>
+      <Substep>Update <File>.ctx.progress.xml</File> to reflect the status of security verification.</Substep>
+    </Step>
+    <Step>For recurring security issues, update <File>.ctx.progress.xml</File> with patterns and recommendations for future prevention.</Step>
+  </Workflow>
+  <Principles>
+    <Principle>Ensure code is free from security vulnerabilities.</Principle>
+    <Principle>Track all security issues and fixes in .ctx.tasks.xml.</Principle>
+    <Principle>Update .ctx.progress.xml with security verification status and recommendations.</Principle>
+    <Principle>Communicate security gaps or failures in .ctx.tasks.xml for developer follow-up.</Principle>
+  </Principles>
+  <Tracking>
+    <Uses>.ctx.progress.xml</Uses>
+    <Uses>.ctx.tasks.xml</Uses>
+    <Description>All security issues, vulnerability fixes, and recommendations are tracked in these files. Progress is updated as security verification proceeds.</Description>
+  </Tracking>
+</AgentProtocol> 

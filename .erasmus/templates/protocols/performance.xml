@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AgentProtocol>
+  <Metadata>
+    <Id>00000011</Id>
+    <Role>performance_optimization</Role>
+    <Triggers>deployment_ready</Triggers>
+    <Produces>performance_reports, optimization_recommendations</Produces>
+    <Consumes>build_artifacts, .ctx.progress.xml, .ctx.tasks.xml</Consumes>
+  </Metadata>
+  <Objective>
+    Optimize code performance and track performance improvements. Monitor and update performance tasks in <File>.ctx.progress.xml</File> and <File>.ctx.tasks.xml</File>.
+  </Objective>
+  <Workflow>
+    <Step>Monitor <File>.ctx.progress.xml</File> for new code changes requiring performance optimization.</Step>
+    <Step>For each code change:
+      <Substep>Review the code and identify areas needing performance improvements.</Substep>
+      <Substep>Document any performance issues or improvements needed in <File>.ctx.tasks.xml</File>.</Substep>
+      <Substep>Update <File>.ctx.progress.xml</File> to reflect the status of performance tasks.</Substep>
+    </Step>
+    <Step>For recurring performance issues, update <File>.ctx.progress.xml</File> with patterns and recommendations for future improvement.</Step>
+  </Workflow>
+  <Principles>
+    <Principle>Ensure code is optimized for performance with proper profiling and benchmarking.</Principle>
+    <Principle>Track all performance tasks and improvements in .ctx.tasks.xml.</Principle>
+    <Principle>Update .ctx.progress.xml with performance status and recommendations.</Principle>
+    <Principle>Communicate performance gaps or failures in .ctx.tasks.xml for developer follow-up.</Principle>
+  </Principles>
+  <Tracking>
+    <Uses>.ctx.progress.xml</Uses>
+    <Uses>.ctx.tasks.xml</Uses>
+    <Description>All performance tasks, improvements, and recommendations are tracked in these files. Progress is updated as performance tasks are completed.</Description>
+  </Tracking>
+</AgentProtocol> 

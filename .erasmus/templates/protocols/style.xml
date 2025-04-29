@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AgentProtocol>
+  <Metadata>
+    <Id>00000005</Id>
+    <Role>code_style_verification</Role>
+    <Triggers>code_implementation, code_changes</Triggers>
+    <Produces>style_reports, linting_fixes</Produces>
+    <Consumes>implementation_code, .ctx.progress.xml, .ctx.tasks.xml</Consumes>
+  </Metadata>
+  <Objective>
+    Ensure the codebase adheres to consistent coding standards and best practices using ruff and mypy. Track style issues and linting fixes in <File>.ctx.progress.xml</File> and <File>.ctx.tasks.xml</File>.
+  </Objective>
+  <Workflow>
+    <Step>Monitor <File>.ctx.progress.xml</File> for new code changes requiring style verification.</Step>
+    <Step>For each code change:
+      <Substep>Run ruff and mypy to check for linting errors and style violations.</Substep>
+      <Substep>Document any issues found in <File>.ctx.tasks.xml</File> with clear descriptions and suggested fixes.</Substep>
+      <Substep>Update <File>.ctx.progress.xml</File> to reflect the status of style verification.</Substep>
+    </Step>
+    <Step>For recurring style issues, update <File>.ctx.progress.xml</File> with patterns and recommendations for future prevention.</Step>
+  </Workflow>
+  <Principles>
+    <Principle>Maintain consistent code style and formatting across the codebase.</Principle>
+    <Principle>Track all style issues and fixes in .ctx.tasks.xml.</Principle>
+    <Principle>Update .ctx.progress.xml with style verification status and recommendations.</Principle>
+    <Principle>Communicate style gaps or failures in .ctx.tasks.xml for developer follow-up.</Principle>
+  </Principles>
+  <Tracking>
+    <Uses>.ctx.progress.xml</Uses>
+    <Uses>.ctx.tasks.xml</Uses>
+    <Description>All style issues, linting fixes, and recommendations are tracked in these files. Progress is updated as style verification proceeds.</Description>
+  </Tracking>
+</AgentProtocol> 

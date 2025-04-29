@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<Architecture>
+  <Version>0.2.0</Version> 
+  <Title>Erasmus - Context Management and Protocol Handling</Title>
+  <Overview>
+    <Description>Erasmus is a library for managing development context, protocols, and Model Context Protocol (MCP) interactions. It provides a robust, testable, and maintainable solution for handling development rules and context management.</Description>
+  </Overview>
+  <CoreComponents>
+    <Component>
+      <Name>Path Management</Name>
+      <Purpose>Centralized path management for different IDE environments</Purpose>
+      <Features>
+        <Feature>IDE environment detection from environment variables</Feature>
+        <Feature>Interactive IDE selection when environment variable is not set</Feature>
+        <Feature>Consistent path structure across different IDEs</Feature>
+        <Feature>Automatic directory and file creation</Feature>
+        <Feature>Symlink management for cross-IDE compatibility</Feature>
+      </Features>
+      <Implementation>
+        <Detail>PathMngrModel for managing all paths</Detail>
+        <Detail>IDE enum with metadata for each supported IDE</Detail>
+        <Detail>Environment variable detection with fallback to user input</Detail>
+        <Detail>Singleton pattern for global path access</Detail>
+      </Implementation>
+      <SupportedIDEs>
+        <IDE>
+          <Name>Windsurf</Name>
+          <RulesFile>.windsurfrules</RulesFile>
+          <GlobalRulesPath>~/.codeium/windsurf/memories/global_rules.md</GlobalRulesPath>
+          <SymlinkToCursor>true</SymlinkToCursor>
+        </IDE>
+        <IDE>
+          <Name>Cursor</Name>
+          <RulesFile>.cursorrules</RulesFile>
+          <GlobalRulesPath>~/.cursor/global_rules.md</GlobalRulesPath>
+          <SymlinkToCursor>false</SymlinkToCursor>
+        </IDE>
+        <IDE>
+          <Name>Codex</Name>
+          <RulesFile>codex.md</RulesFile>
+          <GlobalRulesPath>~/.codex/instructions.md</GlobalRulesPath>
+          <SymlinkToCursor>false</SymlinkToCursor>
+        </IDE>
+        <IDE>
+          <Name>Claude</Name>
+          <RulesFile>CLAUDE.md</RulesFile>
+          <GlobalRulesPath>~/.claude/CLAUDE.md</GlobalRulesPath>
+          <SymlinkToCursor>false</SymlinkToCursor>
+        </IDE>
+      </SupportedIDEs>
+    </Component>
+    <Component>
+      <Name>Environment Management</Name>
+      <Purpose>Generic, type-safe environment variable management</Purpose>
+      <Features>
+        <Feature>Dynamic variable definition (required/optional)</Feature>
+        <Feature>Strong type validation</Feature>
+        <Feature>Value constraints (min/max, patterns)</Feature>
+        <Feature>Custom validation functions</Feature>
+        <Feature>File-based loading (.env)</Feature>
+        <Feature>System environment loading</Feature>
+        <Feature>Configuration merging</Feature>
+      </Features>
+      <Implementation>
+        <Detail>EnvironmentConfig class for managing variables</Detail>
+        <Detail>VariableDefinition for type and constraint definitions</Detail>
+        <Detail>Comprehensive validation system</Detail>
+        <Detail>Error handling with descriptive messages</Detail>
+      </Implementation>
+    </Component>
+    <Component>
+      <Name>File Monitor Service</Name>
+      <Purpose>Monitors changes in ctx.architecture.md, ctx.progress.md, and ctx.tasks.md and applies the changes to .windsurfrules and/or .cursorrules files</Purpose>
+      <Responsibilities>
+        <Responsibility>Watch for changes in architecture, progress, and tasks files</Responsibility>
+        <Responsibility>Update rules file when changes are detected</Responsibility>
+        <Responsibility>Maintain file system event listeners</Responsibility>
+      </Responsibilities>
+      <Implementation>
+        <Detail>Uses watchdog for file system events</Detail>
+        <Detail>Efficient event handling</Detail>
+        <Detail>Robust error recovery</Detail>
+      </Implementation>
+    </Component>
+    <Component>
+      <Name>Context Manager</Name>
+      <Purpose>Manages development context files</Purpose>
+      <Responsibilities>
+        <Responsibility>Save/load context files to/from .erasmus/context directory</Responsibility>
+        <Responsibility>Parse and sanitize document names</Responsibility>
+        <Responsibility>Ensure ASCII-only characters</Responsibility>
+        <Responsibility>Handle file operations safely</Responsibility>
+      </Responsibilities>
+      <Implementation>
+        <Detail>Safe file operations</Detail>
+        <Detail>Content sanitization</Detail>
+        <Detail>Error handling</Detail>
+      </Implementation>
+    </Component>
+    <Component>
+      <Name>Protocol Handler</Name>
+      <Purpose>Manages protocol definitions</Purpose>
+      <Responsibilities>
+        <Responsibility>Add protocols to context objects</Responsibility>
+        <Responsibility>Preserve existing content</Responsibility>
+        <Responsibility>Load/save protocols from/to .erasmus/protocol folder</Responsibility>
+      </Responsibilities>
+      <Implementation>
+        <Detail>Protocol validation</Detail>
+        <Detail>Content preservation</Detail>
+        <Detail>File operations</Detail>
+      </Implementation>
+    </Component>
+    <Component>
+      <Name>MCP Integration</Name>
+      <Purpose>Model Context Protocol management</Purpose>
+      <Components>
+        <SubComponent>
+          <Name>Registry Manager</Name>
+          <Detail>Load from JSON configuration</Detail>
+          <Detail>Server registration</Detail>
+        </SubComponent>
+        <SubComponent>
+          <Name>Client Implementation</Name>
+          <Detail>Python SDK integration</Detail>
+          <Detail>Request handling</Detail>
+        </SubComponent>
+        <SubComponent>
+          <Name>Server Implementation</Name>
+          <Detail>CLI mirroring</Detail>
+          <Detail>Request processing</Detail>
+        </SubComponent>
+      </Components>
+    </Component>
+    <Component>
+      <Name>CLI Interface</Name>
+      <Purpose>User interaction layer</Purpose>
+      <Responsibilities>
+        <Responsibility>Context management</Responsibility>
+        <Responsibility>Protocol management</Responsibility>
+        <Responsibility>MCP server management</Responsibility>
+      </Responsibilities>
+    </Component>
+  </CoreComponents>
+  <DevelopmentPrinciples>
+    <Principle>
+      <Name>Testing Strategy</Name>
+      <Detail>Unit tests for each component</Detail>
+      <Detail>Integration tests for component interaction</Detail>
+      <Detail>End-to-end tests for CLI operations</Detail>
+      <Detail>Mock external dependencies</Detail>
+      <Detail>Test coverage requirements: 80% minimum</Detail>
+    </Principle>
+    <Principle>
+      <Name>Code Quality</Name>
+      <Detail>Type hints throughout</Detail>
+      <Detail>Comprehensive documentation</Detail>
+      <Detail>Error handling with proper logging</Detail>
+      <Detail>Clean code principles</Detail>
+      <Detail>KISS (Keep It Simple, Stupid) approach</Detail>
+    </Principle>
+    <Principle>
+      <Name>Configuration Management</Name>
+      <Detail>Centralized path management</Detail>
+      <Detail>Environment variable handling</Detail>
+      <Detail>No hardcoded values</Detail>
+      <Detail>Configuration validation</Detail>
+      <Detail>IDE environment detection</Detail>
+    </Principle>
+    <Principle>
+      <Name>Error Handling</Name>
+      <Detail>Graceful degradation</Detail>
+      <Detail>Detailed error logging</Detail>
+      <Detail>User-friendly error messages</Detail>
+      <Detail>Recovery mechanisms</Detail>
+    </Principle>
+    <Principle>
+      <Name>Data Modeling</Name>
+      <Detail>Use Pydantic models for serializable data structures</Detail>
+      <Detail>Use NamedTuple for simple, immutable data structures</Detail>
+      <Detail>Modern type hints (lowercase list, dict, | for union)</Detail>
+      <Detail>Type safety throughout the codebase</Detail>
+    </Principle>
+  </DevelopmentPrinciples>
+  <Requirements>
+    <Requirement>
+      <Name>nano (text editor)</Name>
+      <Description>The CLI uses 'nano' as the default editor for editing context files. Users may set a different editor by configuring the EDITOR environment variable.</Description>
+    </Requirement>
+  </Requirements>
+  <Dependencies>
+    <Dependency>Python 3.8+</Dependency>
+    <Dependency>loguru</Dependency>
+    <Dependency>modelcontextprotocol/python-sdk | mcp[cli]</Dependency>
+    <Dependency>pytest (testing)</Dependency>
+    <Dependency>typer (CLI)</Dependency>
+    <Dependency>watchdog (file monitoring)</Dependency>
+  </Dependencies>
+  <DirectoryStructure>
+    <Directory>
+      <Path>erasmus/</Path>
+      <SubDirectory>
+        <Path>.erasmus/</Path>
+        <Description>Library working files</Description>
+        <SubDirectory>
+          <Path>protocol/</Path>
+          <Description>Protocol definitions</Description>
+        </SubDirectory>
+        <SubDirectory>
+          <Path>context/</Path>
+          <Description>Context Folders</Description>
+          <SubDirectory>
+            <Path>{context_name}/</Path>
+            <Description>Labeled by name</Description>
+            <File>
+              <Name>ctx.architecture.md</Name>
+              <Description>Architecture doc</Description>
+            </File>
+            <File>
+              <Name>ctx.progress.md</Name>
+              <Description>Progress doc</Description>
+            </File>
+            <File>
+              <Name>ctx.tasks.md</Name>
+              <Description>Tasks doc</Description>
+            </File>
+          </SubDirectory>
+        </SubDirectory>
+      </SubDirectory>
+      <SubDirectory>
+        <Path>src/</Path>
+        <SubDirectory>
+          <Path>monitor/</Path>
+          <Description>File monitoring</Description>
+        </SubDirectory>
+        <SubDirectory>
+          <Path>context/</Path>
+          <Description>Context management</Description>
+        </SubDirectory>
+        <SubDirectory>
+          <Path>protocol/</Path>
+          <Description>Protocol handling</Description>
+        </SubDirectory>
+        <SubDirectory>
+          <Path>logging/</Path>
+          <Description>Logging system</Description>
+        </SubDirectory>
+        <SubDirectory>
+          <Path>mcp/</Path>
+          <Description>MCP integration</Description>
+        </SubDirectory>
+        <SubDirectory>
+          <Path>cli/</Path>
+          <Description>Command line interface</Description>
+        </SubDirectory>
+      </SubDirectory>
+      <SubDirectory>
+        <Path>tests/</Path>
+        <Description>Test suite</Description>
+      </SubDirectory>
+      <SubDirectory>
+        <Path>config/</Path>
+        <Description>Configuration files</Description>
+      </SubDirectory>
+      <File>
+        <Name>.cursorrules | .windsurfrules</Name>
+        <Description>Rules file and injected context</Description>
+      </File>
+      <File>
+        <Name>.ctx.architecture.xml</Name>
+        <Description>Monitored design doc</Description>
+      </File>
+      <File>
+        <Name>.ctx.progress.xml</Name>
+        <Description>Monitored development schedule</Description>
+      </File>
+      <File>
+        <Name>.ctx.tasks.xml</Name>
+        <Description>Monitored task list</Description>
+      </File>
+    </Directory>
+  </DirectoryStructure>
+  <DevelopmentWorkflow>
+    <Step>Component selection from PROGRESS.md</Step>
+    <Step>Task breakdown in TASKS.md</Step>
+    <Step>Test-driven development</Step>
+    <Step>Code review</Step>
+    <Step>Integration testing</Step>
+    <Step>Documentation update</Step> 
+  </DevelopmentWorkflow> 
+  <DesignConsiderations>
+    <Item>Use clear naming conventions for all path and content accessors:</Item>
+    <Item>Methods that return a path should use the <code>_path</code> suffix (e.g., <code>get_context_dir_path</code>), and methods that return content should use the <code>_content</code> suffix. This ensures clarity and maintainability throughout the codebase.</Item>
+  </DesignConsiderations>
+</Architecture>   

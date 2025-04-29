@@ -1,0 +1,30 @@
+<Progress>
+  <Phase name="Phase Name">
+    <Status>Status (e.g., Completed, In Progress, Planned)</Status>
+    <Tasks>
+      <Task name="Task Name">
+        <Status>Status</Status>
+        <Subtasks>
+          <Subtask name="Subtask Name">
+            <Status>Status</Status>
+          </Subtask>
+          <!-- Add more subtasks as needed -->
+        </Subtasks>
+      </Task>
+      <!-- Add more tasks as needed -->
+    </Tasks>
+  </Phase>
+  <!-- Add more phases as needed -->
+  
+  <CurrentFocus>
+    <Phase>Current phase name</Phase>
+    <Priority>Current priority</Priority>
+    <NextTask>Next task to work on</NextTask>
+  </CurrentFocus>
+  
+  <Notes>
+    <Note>Note 1</Note>
+    <Note>Note 2</Note>
+    <!-- Add more notes as needed -->
+  </Notes>
+</Progress> 

@@ -1,0 +1,47 @@
+<Protocol name="Protocol Name">
+  <Description>Protocol description</Description>
+  
+  <Triggers>
+    <Trigger>Trigger 1</Trigger>
+    <Trigger>Trigger 2</Trigger>
+    <!-- Add more triggers as needed -->
+  </Triggers>
+  
+  <Produces>
+    <Output>Output 1</Output>
+    <Output>Output 2</Output>
+    <!-- Add more outputs as needed -->
+  </Produces>
+  
+  <Consumes>
+    <Input>Input 1</Input>
+    <Input>Input 2</Input>
+    <!-- Add more inputs as needed -->
+  </Consumes>
+  
+  <Workflow>
+    <Step name="Step Name">
+      <Description>Step description</Description>
+      <Actions>
+        <Action>Action 1</Action>
+        <Action>Action 2</Action>
+        <!-- Add more actions as needed -->
+      </Actions>
+    </Step>
+    <!-- Add more steps as needed -->
+  </Workflow>
+  
+  <Principles>
+    <Principle name="Principle Name">
+      <Description>Principle description</Description>
+    </Principle>
+    <!-- Add more principles as needed -->
+  </Principles>
+  
+  <Tracking>
+    <Metric name="Metric Name">
+      <Description>Metric description</Description>
+    </Metric>
+    <!-- Add more metrics as needed -->
+  </Tracking>
+</Protocol> 

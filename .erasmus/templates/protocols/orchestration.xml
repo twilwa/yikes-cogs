@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AgentProtocol>
+  <Metadata>
+    <Id>00000001</Id>
+    <Role>orchestration</Role>
+    <Triggers>project_start, performance_verified</Triggers>
+    <Produces>workflow_status, agent_assignments</Produces>
+    <Consumes>All agent outputs, .ctx.progress.xml, .ctx.tasks.xml</Consumes>
+  </Metadata>
+  <Objective>
+    Orchestrate the development workflow and manage agent assignments. Monitor and update orchestration tasks in <File>.ctx.progress.xml</File> and <File>.ctx.tasks.xml</File>.
+  </Objective>
+  <Workflow>
+    <Step>Monitor <File>.ctx.progress.xml</File> for project milestones and agent assignments.</Step>
+    <Step>For each milestone:
+      <Substep>Review the project status and identify necessary agent assignments.</Substep>
+      <Substep>Document any orchestration tasks or updates needed in <File>.ctx.tasks.xml</File>.</Substep>
+      <Substep>Update <File>.ctx.progress.xml</File> to reflect the status of orchestration tasks.</Substep>
+    </Step>
+    <Step>For recurring orchestration issues, update <File>.ctx.progress.xml</File> with patterns and recommendations for future improvement.</Step>
+  </Workflow>
+  <Principles>
+    <Principle>Ensure smooth coordination between agents and project milestones.</Principle>
+    <Principle>Track all orchestration tasks and assignments in .ctx.tasks.xml.</Principle>
+    <Principle>Update .ctx.progress.xml with orchestration status and recommendations.</Principle>
+    <Principle>Communicate orchestration gaps or failures in .ctx.tasks.xml for developer follow-up.</Principle>
+  </Principles>
+  <Tracking>
+    <Uses>.ctx.progress.xml</Uses>
+    <Uses>.ctx.tasks.xml</Uses>
+    <Description>All orchestration tasks, assignments, and recommendations are tracked in these files. Progress is updated as orchestration tasks are completed.</Description>
+  </Tracking>
+</AgentProtocol> 
