@@ -1,34 +1,29 @@
 import re
 from typing import Literal, Optional, NoReturn
-
 import discord
 from redbot.core import commands, Config, checks
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import box
+import logging
+import aiohttp
+import asyncio
+import os
+
+log = logging.getLogger("red.yikescogs.twitterfix")
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
-# Regex to find URLs, ensuring they start with http:// or https://
-# and capture the domain and the rest of the path/query
-URL_REGEX = re.compile(r"https?://([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(/[^?\s]*)?(\?[^\s]*)?")
-
 DEFAULT_GUILD = {
     "enabled": False,  # Master switch for everything
-    "url_mapping_enabled": False,  # Controls URL mapping feature
-    "title_updates_enabled": False,  # Controls thread title updating feature
+    "openrouter_model": "",  # User-configurable model string
     "monitored_channels": [],  # Empty list means all channels
-    "url_map": {
-        "twitter.com": "vxtwitter.com",
-        "x.com": "vxtwitter.com",
-    },
-    "thread_title_format": "Discussion thread for {url}",
-    "send_in_thread": True,  # Kept for potential future flexibility
 }
 
+XCOM_REGEX = re.compile(r"https://x\.com/[^\s]+", re.IGNORECASE)
 
 class TwitterFix(commands.Cog):
     """
-    A cog that fixes social media links and updates thread titles.
+    A cog that processes x.com links, posts r.jina.ai/xcancel.com links, and uses OpenRouter for summaries and thread titles.
     """
 
     def __init__(self, bot: Red) -> None:
@@ -40,119 +35,6 @@ class TwitterFix(commands.Cog):
             force_registration=True,
         )
         self.config.register_guild(**DEFAULT_GUILD)
-        # Dictionary to track threads that have already had their titles updated
-        self.updated_threads = set()
-
-    async def red_delete_data_for_user(
-        self, *, requester: RequestType, user_id: int
-    ) -> NoReturn:
-        # This cog stores configuration per guild, not per user.
-        # User data removal doesn't apply here.
-        pass
-
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message) -> None:
-        """
-        Serves two purposes:
-        1. Processes embed messages in threads to update their titles
-        2. Checks messages for URLs to create discussion threads
-        """
-        # First, handle thread title updates if title updates are enabled
-        if isinstance(message.channel, discord.Thread) and message.channel.guild:
-            # Check if thread title updates are enabled for this guild
-            guild_settings = await self.config.guild(message.channel.guild).all()
-            if (guild_settings["enabled"] and 
-                guild_settings["title_updates_enabled"] and
-                "https://" in message.channel.name and 
-                message.channel.id not in self.updated_threads):
-                
-                # Check if message has embeds
-                if message.embeds:
-                    for embed in message.embeds:
-                        if embed.title:
-                            # Found a title in an embed, update the thread name
-                            try:
-                                await message.channel.edit(name=embed.title[:100])  # Thread names limited to 100 chars
-                                # Mark this thread as updated so we don't try again
-                                self.updated_threads.add(message.channel.id)
-                                break
-                            except (discord.Forbidden, discord.HTTPException) as e:
-                                print(f"TwitterFix: Failed to update thread title: {e}")
-                                self.updated_threads.add(message.channel.id)
-            return  # Don't process URL fixes for messages in threads
-
-        # Standard URL processing logic follows
-        if message.guild is None:  # Ignore DMs
-            return
-        if message.author.bot:  # Ignore bots
-            return
-        if await self.bot.cog_disabled_in_guild(self, message.guild):
-            return
-        if await self.bot.is_automod_immune(
-            message.author
-        ):  # Ignore automod immune users
-            return
-
-        guild_settings = await self.config.guild(message.guild).all()
-        if not guild_settings["enabled"] or not guild_settings["url_mapping_enabled"]:
-            return
-
-        monitored_channels = guild_settings["monitored_channels"]
-        # If monitored_channels is not empty, only check those channels
-        if monitored_channels and message.channel.id not in monitored_channels:
-            return
-
-        content = message.content
-        url_map = guild_settings["url_map"]
-        found_url: Optional[str] = None
-        modified_url: Optional[str] = None
-        original_domain: Optional[str] = None
-
-        # Find the first matching URL in the message
-        for match in URL_REGEX.finditer(content):
-            full_url = match.group(0)
-            domain = match.group(1).lower()  # Domain part (e.g., twitter.com)
-            path = match.group(2) or ""  # Path part (e.g., /user/status/123)
-            query = match.group(3) or ""  # Query part (e.g., ?s=20)
-
-            if domain in url_map:
-                found_url = full_url
-                original_domain = domain
-                replacement_domain = url_map[domain]
-                # Reconstruct the URL with the new domain
-                modified_url = f"https://{replacement_domain}{path}{query}"
-                break  # Process only the first found match
-
-        if found_url and modified_url:
-            # Check permissions
-            channel_perms = message.channel.permissions_for(message.guild.me)
-            if not channel_perms.create_public_threads:
-                # Maybe log this or notify an admin channel? For now, just return.
-                print(
-                    f"TwitterFix: Missing 'Create Public Threads' permission in channel"
-                )
-                return
-
-            thread_title = guild_settings["thread_title_format"].format(url=found_url)
-            # Ensure title is within Discord limits (100 chars)
-            thread_title = thread_title[:100]
-
-            try:
-                # Create the thread attached to the original message
-                thread = await message.create_thread(
-                    name=thread_title, auto_archive_duration=1440
-                )  # 1 day archive
-                
-                # Send the modified URL into the thread
-                await thread.send(modified_url)
-            except discord.Forbidden:
-                print(
-                    f"TwitterFix: Failed to create thread or send message due to permissions"
-                )
-            except discord.HTTPException as e:
-                print(f"TwitterFix: Failed to create thread or send message: {e}")
-
-    # --- Configuration Commands ---
 
     @commands.group(name="twitterfix")
     @checks.admin_or_permissions(manage_guild=True)
@@ -163,33 +45,55 @@ class TwitterFix(commands.Cog):
 
     @_twitterfix.command(name="enable")
     async def _enable(self, ctx: commands.Context, true_or_false: bool):
-        """Enable or disable the TwitterFix cog entirely for this server."""
+        """Enable or disable the TwitterFix cog for this server."""
         if ctx.guild:
             await self.config.guild(ctx.guild).enabled.set(true_or_false)
             status = "enabled" if true_or_false else "disabled"
             await ctx.send(f"TwitterFix is now {status}.")
-            
-    @_twitterfix.command(name="enableurlmap")
-    async def _enable_urlmap(self, ctx: commands.Context, true_or_false: bool):
-        """Enable or disable just the URL mapping feature."""
-        if ctx.guild:
-            await self.config.guild(ctx.guild).url_mapping_enabled.set(true_or_false)
-            status = "enabled" if true_or_false else "disabled"
-            await ctx.send(f"URL mapping feature is now {status}.")
-            
-    @_twitterfix.command(name="enabletitleupdates")
-    async def _enable_titleupdates(self, ctx: commands.Context, true_or_false: bool):
-        """Enable or disable just the thread title update feature."""
-        if ctx.guild:
-            await self.config.guild(ctx.guild).title_updates_enabled.set(true_or_false)
-            status = "enabled" if true_or_false else "disabled"
-            await ctx.send(f"Thread title updates feature is now {status}.")
-            
-    @_twitterfix.command(name="clearcache")
-    async def _clearcache(self, ctx: commands.Context):
-        """Clear the cache of threads that have had their titles updated."""
-        self.updated_threads.clear()
-        await ctx.send("Thread title update cache has been cleared.")
+
+    @_twitterfix.command(name="setmodel")
+    async def _setmodel(self, ctx: commands.Context, *, model: str):
+        """Set the OpenRouter model string (provider/model:tag). Validates with a dummy call."""
+        if not ctx.guild:
+            return
+        # Dummy validation: just check it's non-empty and contains a slash
+        if not model or "/" not in model:
+            await ctx.send("Model string must be in the format provider/model:tag.")
+            return
+        # TODO: Actually validate with OpenRouter API (dummy call)
+        await self.config.guild(ctx.guild).openrouter_model.set(model)
+        await ctx.send(f"OpenRouter model set to `{model}`.")
+
+    @_twitterfix.command(name="showsettings")
+    async def _show_settings(self, ctx: commands.Context):
+        """Show the current settings for TwitterFix."""
+        if not ctx.guild:
+            return
+        settings = await self.config.guild(ctx.guild).all()
+        enabled = settings["enabled"]
+        model = settings["openrouter_model"]
+        channels = settings["monitored_channels"]
+        channel_mentions = []
+        if channels:
+            for channel_id in channels:
+                ch = ctx.guild.get_channel(channel_id)
+                channel_mentions.append(
+                    ch.mention if ch else f"Invalid ID: {channel_id}"
+                )
+            channel_str = (
+                ", ".join(channel_mentions)
+                if channel_mentions
+                else "None (All channels active)"
+            )
+        else:
+            channel_str = "None (All channels active)"
+        embed = discord.Embed(
+            title="TwitterFix Settings", color=await ctx.embed_color()
+        )
+        embed.add_field(name="Enabled", value=str(enabled), inline=True)
+        embed.add_field(name="OpenRouter Model", value=model or "Not set", inline=False)
+        embed.add_field(name="Monitored Channels", value=channel_str, inline=False)
+        await ctx.send(embed=embed)
 
     @_twitterfix.group(name="channel")
     async def _channel(self, ctx: commands.Context):
@@ -213,9 +117,7 @@ class TwitterFix(commands.Cog):
                     await ctx.send(f"{channel.mention} is already being monitored.")
 
     @_channel.command(name="remove")
-    async def _channel_remove(
-        self, ctx: commands.Context, channel: discord.TextChannel
-    ):
+    async def _channel_remove(self, ctx: commands.Context, channel: discord.TextChannel):
         """Remove a channel from the monitored list."""
         if ctx.guild:
             async with self.config.guild(ctx.guild).monitored_channels() as channels:
@@ -243,7 +145,6 @@ class TwitterFix(commands.Cog):
         """List the channels currently being monitored."""
         if not ctx.guild:
             return
-            
         channels = await self.config.guild(ctx.guild).monitored_channels()
         if not channels:
             await ctx.send(
@@ -251,7 +152,6 @@ class TwitterFix(commands.Cog):
                 "**This means the bot is monitoring ALL channels.**"
             )
             return
-
         channel_mentions = []
         invalid_channels = []
         for channel_id in channels:
@@ -260,139 +160,169 @@ class TwitterFix(commands.Cog):
                 channel_mentions.append(ch.mention)
             else:
                 invalid_channels.append(channel_id)
-
         if channel_mentions:
             await ctx.send(
                 f"Monitoring the following channels:\n{', '.join(channel_mentions)}"
             )
         else:
             await ctx.send("No valid channels are currently set for monitoring.")
-
         if invalid_channels:
             await ctx.send(
                 f"Note: The following channel IDs are stored but could not be found (they may have been deleted): {', '.join(map(str, invalid_channels))}"
             )
-            # Optional: Offer to clean up invalid IDs
 
-    # --- URL Map Commands ---
+    async def poll_markdown(self, url: str, max_attempts: int = 10, delay: float = 2.0) -> Optional[str]:
+        """Poll the r.jina.ai URL for markdown content, return as string if found."""
+        async with aiohttp.ClientSession() as session:
+            for attempt in range(max_attempts):
+                try:
+                    async with session.get(url, headers={"Accept": "text/markdown"}) as resp:
+                        if resp.status == 200:
+                            text = await resp.text()
+                            if text.strip():
+                                return text
+            except Exception as e:
+                log.warning(f"Error polling markdown ({url}): {e}")
+            await asyncio.sleep(delay)
+        return None
 
-    @_twitterfix.group(name="urlmap")
-    async def _urlmap(self, ctx: commands.Context):
-        """Manage the URL domain replacement mappings."""
-        pass
-
-    @_urlmap.command(name="add")
-    async def _urlmap_add(
-        self, ctx: commands.Context, original_domain: str, replacement_domain: str
-    ):
-        """
-        Add or update a URL domain replacement.
-
-        Example: [p]twitterfix urlmap add x.com vxtwitter.com
-        """
-        if not ctx.guild:
-            return
-            
-        original_domain = original_domain.lower().strip("/")  # Normalize
-        replacement_domain = replacement_domain.lower().strip("/")  # Normalize
-
-        # Basic validation (not a full domain validator)
-        if (
-            "." not in original_domain
-            or " " in original_domain
-            or "://" in original_domain
-        ):
-            await ctx.send(
-                f"Invalid format for original domain: `{original_domain}`. Please provide just the domain name (e.g., `x.com`)."
-            )
-            return
-        if (
-            "." not in replacement_domain
-            or " " in replacement_domain
-            or "://" in replacement_domain
-        ):
-            await ctx.send(
-                f"Invalid format for replacement domain: `{replacement_domain}`. Please provide just the domain name (e.g., `vxtwitter.com`)."
-            )
-            return
-
-        async with self.config.guild(ctx.guild).url_map() as url_map:
-            url_map[original_domain] = replacement_domain
-
-        await ctx.send(
-            f"Mapping added: `{original_domain}` will now be replaced with `{replacement_domain}`."
+    async def call_openrouter(self, model: str, markdown: str) -> Optional['dict[str, str]']:
+        """Send markdown to OpenRouter API and return structured output (dict) or None."""
+        api_url = "https://openrouter.ai/api/v1/chat/completions"
+        prompt = (
+            "You are a Discord thread summarizer. Given the following markdown, "
+            "return a JSON object with two fields: 'thread-title' (a concise, descriptive title for the thread) "
+            "and 'thread-summary' (a short summary of the content). Markdown follows:\n\n" + markdown
         )
+        data = {
+            "model": model,
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "response_format": {"type": "json_object"},
+            "max_tokens": 512,
+        }
+        headers = {}
+        api_key = os.environ.get("OPENROUTER_API_KEY")
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(api_url, json=data, headers=headers, timeout=60) as resp:
+                    if resp.status == 200:
+                        result = await resp.json()
+                        # Try to extract the structured object from the response
+                        content = result["choices"][0]["message"]["content"]
+                        import json as _json
+                        return _json.loads(content)
+                    else:
+                        log.error(f"OpenRouter API error: {resp.status} {await resp.text()}")
+        except Exception as e:
+            log.error(f"OpenRouter API call failed: {e}")
+        return None
 
-    @_urlmap.command(name="remove", aliases=["delete", "del"])
-    async def _urlmap_remove(self, ctx: commands.Context, original_domain: str):
-        """
-        Remove a URL domain replacement mapping.
-
-        Example: [p]twitterfix urlmap remove x.com
-        """
-        if not ctx.guild:
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message) -> None:
+        if message.author.bot:
             return
-            
-        original_domain = original_domain.lower().strip("/")  # Normalize
+        # Offload heavy work so we don't block the event loop
+        self.bot.loop.create_task(self.process_message(message))
 
-        async with self.config.guild(ctx.guild).url_map() as url_map:
-            if original_domain in url_map:
-                del url_map[original_domain]
-                await ctx.send(f"Mapping for `{original_domain}` removed.")
-            else:
-                await ctx.send(f"No mapping found for `{original_domain}`.")
-
-    # --- Show Settings Command ---
-
-    @_twitterfix.command(name="showsettings")
-    async def _show_settings(self, ctx: commands.Context):
-        """Show the current settings for TwitterFix."""
-        if not ctx.guild:
+    async def process_message(self, message: discord.Message) -> None:
+        try:
+            if not message.guild:
+                return
+            if await self.bot.cog_disabled_in_guild(self, message.guild):
+                return
+            settings = await self.config.guild(message.guild).all()
+            if not settings["enabled"]:
+                return
+            # Channel monitoring
+            monitored_channels = settings.get("monitored_channels", [])
+            if monitored_channels and message.channel.id not in monitored_channels:
+                return
+            # Look for x.com link
+            match = XCOM_REGEX.search(message.content)
+            if not match:
+                return
+            x_url = match.group(0)
+            # Convert to xcancel.com
+            xcancel_url = x_url.replace("x.com", "xcancel.com", 1)
+            jina_url = f"r.jina.ai/{xcancel_url}"
+            # Create thread if possible
+            channel_perms = message.channel.permissions_for(message.guild.me)
+            if not channel_perms.create_public_threads:
+                return
+            thread_title = f"Discussion for {x_url}"
+            thread = await message.create_thread(name=thread_title[:100], auto_archive_duration=1440)
+            botmsg = await thread.send(xcancel_url)  # Only post xcancel.com link
+            # --- Async workflow: poll for markdown, call OpenRouter, update thread and message ---
+            await asyncio.sleep(2)  # Give the link a moment to process
+            markdown_url = f"https://{jina_url}"
+            markdown = await self.poll_markdown(markdown_url)
+            if not markdown:
+                await thread.send("Could not retrieve markdown content for summarization.")
+                return
+            model = settings.get("openrouter_model")
+            if not model:
+                await thread.send("No OpenRouter model configured. Use the setmodel command.")
+                return
+            summary_obj = await self.call_openrouter(model, markdown)
+            if not summary_obj:
+                await thread.send("OpenRouter API failed to return a summary.")
+                return
+            # Update thread title and bot message
+            new_title = summary_obj.get("thread-title")
+            summary = summary_obj.get("thread-summary")
+            if new_title:
+                try:
+                    await thread.edit(name=new_title[:100])
+                except Exception as e:
+                    log.warning(f"Failed to update thread title: {e}")
+            if summary:
+                try:
+                    await botmsg.edit(content=f"{xcancel_url}\n\n{summary}")
+                except Exception as e:
+                    log.warning(f"Failed to edit bot message: {e}")
+        except Exception as e:
+            log.error(f"Failed to create thread or send message: {e}")
             return
-            
-        settings = await self.config.guild(ctx.guild).all()
-        master_enabled = settings["enabled"]
-        url_mapping_enabled = settings["url_mapping_enabled"]
-        title_updates_enabled = settings["title_updates_enabled"]
-        channels = settings["monitored_channels"]
-        url_map = settings["url_map"]
-        title_format = settings["thread_title_format"]
+        # --- Async workflow: poll for markdown, call OpenRouter, update thread and message ---
+        markdown_url = f"https://{jina_url}"
+        # Poll for readiness with exponential backoff
+        delay = 0.5
+        max_delay = 5.0
+        markdown = None
+        for attempt in range(5):
+            markdown = await self.poll_markdown(markdown_url)
+            if markdown:
+                break
+            log.debug(f"Polling attempt {attempt+1} failed, retrying in {delay} seconds")
+            await asyncio.sleep(delay)
+            delay = min(max_delay, delay * 2)
+        if not markdown:
+            await thread.send("Could not retrieve markdown content for summarization.")
+            return
+        model = settings.get("openrouter_model")
+        if not model:
+            await thread.send("No OpenRouter model configured. Use the setmodel command.")
+            return
+        summary_obj = await self.call_openrouter(model, markdown)
+        if not summary_obj:
+            await thread.send("OpenRouter API failed to return a summary.")
+            return
+        # Update thread title and bot message
+        new_title = summary_obj.get("thread-title")
+        summary = summary_obj.get("thread-summary")
+        if new_title:
+            try:
+                await thread.edit(name=new_title[:100])
+            except Exception as e:
+                log.warning(f"Failed to update thread title: {e}")
+        if summary:
+            try:
+                await botmsg.edit(content=f"{xcancel_url}\n\n{summary}")
+            except Exception as e:
+                log.warning(f"Failed to edit bot message: {e}")
 
-        channel_mentions = []
-        if channels:
-            for channel_id in channels:
-                ch = ctx.guild.get_channel(channel_id)
-                channel_mentions.append(
-                    ch.mention if ch else f"Invalid ID: {channel_id}"
-                )
-            channel_str = (
-                ", ".join(channel_mentions)
-                if channel_mentions
-                else "None (All channels active)"
-            )
-        else:
-            channel_str = "None (All channels active)"
-
-        map_str = "\n".join(
-            [f"- `{orig}` -> `{repl}`" for orig, repl in url_map.items()]
-        )
-        if not map_str:
-            map_str = "No URL mappings configured."
-
-        embed = discord.Embed(
-            title="TwitterFix Settings", color=await ctx.embed_color()
-        )
-        
-        # Show feature statuses
-        embed.add_field(name="Master Switch", value=str(master_enabled), inline=True)
-        embed.add_field(name="URL Mapping", value=str(url_mapping_enabled), inline=True)
-        embed.add_field(name="Thread Title Updates", value=str(title_updates_enabled), inline=True)
-        
-        # Show other settings 
-        embed.add_field(name="Monitored Channels", value=channel_str, inline=False)
-        embed.add_field(name="URL Mappings", value=map_str, inline=False)
-        embed.add_field(
-            name="Thread Title Format", value=box(title_format), inline=False
-        )
-
-        await ctx.send(embed=embed)
+    # The rest of the cog (message handling, etc.) will be implemented next.
