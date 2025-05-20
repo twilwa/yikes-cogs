@@ -35,14 +35,6 @@ class TwitterFix(commands.Cog):
             force_registration=True,
         )
         self.config.register_guild(**DEFAULT_GUILD)
-        self.processing_threads = {}  # thread_id: message_id for later editing
-
-    async def red_delete_data_for_user(
-        self, *, requester: RequestType, user_id: int
-    ) -> NoReturn:
-        # This cog stores configuration per guild, not per user.
-        # User data removal doesn't apply here.
-        raise NotImplementedError("This cog does not store user data.")
 
     @commands.group(name="twitterfix")
     @checks.admin_or_permissions(manage_guild=True)
@@ -231,35 +223,67 @@ class TwitterFix(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
-        # Only process in guilds
-        if not message.guild or message.author.bot:
+        if message.author.bot:
             return
-        if await self.bot.cog_disabled_in_guild(self, message.guild):
-            return
-        settings = await self.config.guild(message.guild).all()
-        if not settings["enabled"]:
-            return
-        # Channel monitoring
-        monitored_channels = settings.get("monitored_channels", [])
-        if monitored_channels and message.channel.id not in monitored_channels:
-            return
-        # Look for x.com link
-        match = XCOM_REGEX.search(message.content)
-        if not match:
-            return
-        x_url = match.group(0)
-        # Convert to xcancel.com
-        xcancel_url = x_url.replace("x.com", "xcancel.com", 1)
-        jina_url = f"r.jina.ai/{xcancel_url}"
-        # Create thread if possible
-        channel_perms = message.channel.permissions_for(message.guild.me)
-        if not channel_perms.create_public_threads:
-            return
-        thread_title = f"Discussion for {x_url}"
+        # Offload heavy work so we don't block the event loop
+        self.bot.loop.create_task(self.process_message(message))
+
+    async def process_message(self, message: discord.Message) -> None:
         try:
+            if not message.guild:
+                return
+            if await self.bot.cog_disabled_in_guild(self, message.guild):
+                return
+            settings = await self.config.guild(message.guild).all()
+            if not settings["enabled"]:
+                return
+            # Channel monitoring
+            monitored_channels = settings.get("monitored_channels", [])
+            if monitored_channels and message.channel.id not in monitored_channels:
+                return
+            # Look for x.com link
+            match = XCOM_REGEX.search(message.content)
+            if not match:
+                return
+            x_url = match.group(0)
+            # Convert to xcancel.com
+            xcancel_url = x_url.replace("x.com", "xcancel.com", 1)
+            jina_url = f"r.jina.ai/{xcancel_url}"
+            # Create thread if possible
+            channel_perms = message.channel.permissions_for(message.guild.me)
+            if not channel_perms.create_public_threads:
+                return
+            thread_title = f"Discussion for {x_url}"
             thread = await message.create_thread(name=thread_title[:100], auto_archive_duration=1440)
             botmsg = await thread.send(xcancel_url)  # Only post xcancel.com link
-            self.processing_threads[thread.id] = botmsg.id
+            # --- Async workflow: poll for markdown, call OpenRouter, update thread and message ---
+            await asyncio.sleep(2)  # Give the link a moment to process
+            markdown_url = f"https://{jina_url}"
+            markdown = await self.poll_markdown(markdown_url)
+            if not markdown:
+                await thread.send("Could not retrieve markdown content for summarization.")
+                return
+            model = settings.get("openrouter_model")
+            if not model:
+                await thread.send("No OpenRouter model configured. Use the setmodel command.")
+                return
+            summary_obj = await self.call_openrouter(model, markdown)
+            if not summary_obj:
+                await thread.send("OpenRouter API failed to return a summary.")
+                return
+            # Update thread title and bot message
+            new_title = summary_obj.get("thread-title")
+            summary = summary_obj.get("thread-summary")
+            if new_title:
+                try:
+                    await thread.edit(name=new_title[:100])
+                except Exception as e:
+                    log.warning(f"Failed to update thread title: {e}")
+            if summary:
+                try:
+                    await botmsg.edit(content=f"{xcancel_url}\n\n{summary}")
+                except Exception as e:
+                    log.warning(f"Failed to edit bot message: {e}")
         except Exception as e:
             log.error(f"Failed to create thread or send message: {e}")
             return
