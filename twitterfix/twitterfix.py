@@ -181,9 +181,9 @@ class TwitterFix(commands.Cog):
 
     async def poll_markdown(self, url: str, max_attempts: int = 10, delay: float = 2.0) -> Optional[str]:
         """Poll the r.jina.ai URL for markdown content, return as string if found."""
-        for attempt in range(max_attempts):
-            try:
-                async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession() as session:
+            for attempt in range(max_attempts):
+                try:
                     async with session.get(url, headers={"Accept": "text/markdown"}) as resp:
                         if resp.status == 200:
                             text = await resp.text()
