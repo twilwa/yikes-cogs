@@ -264,9 +264,18 @@ class TwitterFix(commands.Cog):
             log.error(f"Failed to create thread or send message: {e}")
             return
         # --- Async workflow: poll for markdown, call OpenRouter, update thread and message ---
-        await asyncio.sleep(2)  # Give the link a moment to process
         markdown_url = f"https://{jina_url}"
-        markdown = await self.poll_markdown(markdown_url)
+        # Poll for readiness with exponential backoff
+        delay = 0.5
+        max_delay = 5.0
+        markdown = None
+        for attempt in range(5):
+            markdown = await self.poll_markdown(markdown_url)
+            if markdown:
+                break
+            log.debug(f"Polling attempt {attempt+1} failed, retrying in {delay} seconds")
+            await asyncio.sleep(delay)
+            delay = min(max_delay, delay * 2)
         if not markdown:
             await thread.send("Could not retrieve markdown content for summarization.")
             return
