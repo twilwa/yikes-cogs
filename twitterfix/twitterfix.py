@@ -181,9 +181,9 @@ class TwitterFix(commands.Cog):
                             text = await resp.text()
                             if text.strip():
                                 return text
-            except Exception as e:
-                log.warning(f"Error polling markdown ({url}): {e}")
-            await asyncio.sleep(delay)
+                except Exception as e:
+                    log.warning(f"Error polling markdown ({url}): {e}")
+                await asyncio.sleep(delay)
         return None
 
     async def call_openrouter(self, model: str, markdown: str) -> Optional['dict[str, str]']:
