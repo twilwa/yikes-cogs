@@ -248,7 +248,7 @@ class TwitterFix(commands.Cog):
             x_url = match.group(0)
             # Convert to xcancel.com
             xcancel_url = x_url.replace("x.com", "xcancel.com", 1)
-            jina_url = f"r.jina.ai/{xcancel_url}"
+            jina_url = f"r.jina.ai/{x_url}"
             # Create thread if possible
             channel_perms = message.channel.permissions_for(message.guild.me)
             if not channel_perms.create_public_threads:
