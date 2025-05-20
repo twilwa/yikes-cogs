@@ -7,6 +7,7 @@ from redbot.core.utils.chat_formatting import box
 import logging
 import aiohttp
 import asyncio
+import os
 
 log = logging.getLogger("red.yikescogs.twitterfix")
 
@@ -209,9 +210,13 @@ class TwitterFix(commands.Cog):
             "response_format": {"type": "json_object"},
             "max_tokens": 512,
         }
+        headers = {}
+        api_key = os.environ.get("OPENROUTER_API_KEY")
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(api_url, json=data, timeout=60) as resp:
+                async with session.post(api_url, json=data, headers=headers, timeout=60) as resp:
                     if resp.status == 200:
                         result = await resp.json()
                         # Try to extract the structured object from the response
