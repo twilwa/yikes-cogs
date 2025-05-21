@@ -246,9 +246,10 @@ class TwitterFix(commands.Cog):
             if not match:
                 return
             x_url = match.group(0)
-            # Convert to xcancel.com
+            # Convert to xcancel.com for Discord message, use nitter.net for Jina
             xcancel_url = x_url.replace("x.com", "xcancel.com", 1)
-            jina_url = f"r.jina.ai/{x_url}"
+            nitter_url = x_url.replace("x.com", "nitter.net", 1)
+            jina_url = f"r.jina.ai/{nitter_url}"
             # Create thread if possible
             channel_perms = message.channel.permissions_for(message.guild.me)
             if not channel_perms.create_public_threads:
