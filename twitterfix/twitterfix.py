@@ -148,11 +148,13 @@ class TwitterFix(commands.Cog):
             else:
                 invalid_channels.append(str(channel_id))
         if channel_mentions:
-            await ctx.send(f"Monitoring the following channels:\n{", ".join(channel_mentions)}")
+            mentions_str = ", ".join(channel_mentions)
+            await ctx.send(f"Monitoring the following channels:\n{mentions_str}")
         else:
             await ctx.send("No valid channels are currently set for monitoring (all were invalid IDs).")
         if invalid_channels:
-            await ctx.send(f"Note: The following channel IDs are stored but could not be found (they may have been deleted): {", ".join(invalid_channels)}")
+            invalids_str = ", ".join(invalid_channels)
+            await ctx.send(f"Note: The following channel IDs are stored but could not be found (they may have been deleted): {invalids_str}")
 
     async def _remove_id_after_delay(self, msg_id: int, delay: int = 60):
         await asyncio.sleep(delay)
