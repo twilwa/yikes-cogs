@@ -326,7 +326,53 @@ class TwitterFix(commands.Cog):
                         if not content_str:
                             log.error(f"OpenRouter response missing expected content structure. Result: {result}")
                             return None
-                        import json as _json # Keep import local if only used here
+# Move these imports to the top of your module
+import json as _json
+import re as _re
+
+def _parse_json(content: str) -> dict:
+    """Try direct JSON parsing."""
+    return _json.loads(content)
+
+def _extract_json_from_markdown(content: str) -> dict | None:
+    """Extract JSON inside ```json ...``` blocks."""
+    pattern = _re.compile(r'```(?:json)?\s*(\{[^`]+\})\s*```', _re.DOTALL)
+    m = pattern.search(content)
+    return _json.loads(m.group(1)) if m else None
+
+def _extract_fields_with_regex(content: str) -> dict | None:
+    """Fallback to pull out thread-title and thread-summary."""
+    title_pat = _re.compile(r'"thread-title"\s*:\s*"([^"]+)"')
+    summary_pat = _re.compile(r'"thread-summary"\s*:\s*"([^"]+)"', _re.DOTALL)
+    title_m = title_pat.search(content)
+    summary_m = summary_pat.search(content)
+    if not (title_m or summary_m):
+        return None
+    result = {}
+    if title_m:
+        result["thread-title"] = title_m.group(1)
+    if summary_m:
+        s = summary_m.group(1).replace(r'\"', '"').replace(r'\n', '\n')
+        result["thread-summary"] = s
+    return result
+
+# In your existing call_openrouter function, replace the big try/except with:
+content_str = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+if not content_str:
+    log.error(...)
+    return None
+
+for parser in (_parse_json, _extract_json_from_markdown, _extract_fields_with_regex):
+    try:
+        structured_output = parser(content_str)
+        if structured_output is not None:
+            log.debug(f"Parsed output via {parser.__name__}: {structured_output}")
+            return structured_output
+    except _json.JSONDecodeError:
+        log.debug(f"{parser.__name__} failed, trying next parser")
+
+log.error(f"Failed to decode JSON from OpenRouter response. Content was: {content_str}")
+return None
                         import re as _re
                         
                         # Try direct JSON parsing first
