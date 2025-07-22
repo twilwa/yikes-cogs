@@ -326,13 +326,102 @@ class TwitterFix(commands.Cog):
                         if not content_str:
                             log.error(f"OpenRouter response missing expected content structure. Result: {result}")
                             return None
-                        import json as _json # Keep import local if only used here
+# Move these imports to the top of your module
+import json as _json
+import re as _re
+
+def _parse_json(content: str) -> dict:
+    """Try direct JSON parsing."""
+    return _json.loads(content)
+
+def _extract_json_from_markdown(content: str) -> dict | None:
+    """Extract JSON inside ```json ...``` blocks."""
+    pattern = _re.compile(r'```(?:json)?\s*(\{[^`]+\})\s*```', _re.DOTALL)
+    m = pattern.search(content)
+    return _json.loads(m.group(1)) if m else None
+
+def _extract_fields_with_regex(content: str) -> dict | None:
+    """Fallback to pull out thread-title and thread-summary."""
+    title_pat = _re.compile(r'"thread-title"\s*:\s*"([^"]+)"')
+    summary_pat = _re.compile(r'"thread-summary"\s*:\s*"([^"]+)"', _re.DOTALL)
+    title_m = title_pat.search(content)
+    summary_m = summary_pat.search(content)
+    if not (title_m or summary_m):
+        return None
+    result = {}
+    if title_m:
+        result["thread-title"] = title_m.group(1)
+    if summary_m:
+        s = summary_m.group(1).replace(r'\"', '"').replace(r'\n', '\n')
+        result["thread-summary"] = s
+    return result
+
+# In your existing call_openrouter function, replace the big try/except with:
+content_str = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+if not content_str:
+    log.error(...)
+    return None
+
+for parser in (_parse_json, _extract_json_from_markdown, _extract_fields_with_regex):
+    try:
+        structured_output = parser(content_str)
+        if structured_output is not None:
+            log.debug(f"Parsed output via {parser.__name__}: {structured_output}")
+            return structured_output
+    except _json.JSONDecodeError:
+        log.debug(f"{parser.__name__} failed, trying next parser")
+
+log.error(f"Failed to decode JSON from OpenRouter response. Content was: {content_str}")
+return None
+                        import re as _re
+                        
+                        # Try direct JSON parsing first
                         try:
                             structured_output = _json.loads(content_str)
                             log.debug(f"OpenRouter API success, got: {structured_output}")
                             return structured_output
-                        except _json.JSONDecodeError as json_e:
-                            log.error(f"Failed to decode JSON from OpenRouter response: {json_e}. Content was: {content_str}")
+                        except _json.JSONDecodeError:
+                            # If direct parsing fails, try to extract JSON from markdown code blocks
+                            log.debug(f"Direct JSON parsing failed, attempting to extract from markdown")
+                            
+                            # Pattern to match JSON in markdown code blocks
+                            json_pattern = _re.compile(r'```(?:json)?\s*(\{[^`]+\})\s*```', _re.DOTALL)
+                            match = json_pattern.search(content_str)
+                            
+                            if match:
+                                json_str = match.group(1)
+                                try:
+                                    structured_output = _json.loads(json_str)
+                                    log.debug(f"Successfully extracted JSON from markdown: {structured_output}")
+                                    return structured_output
+                                except _json.JSONDecodeError:
+                                    log.debug(f"Failed to parse extracted JSON, trying fallback")
+                            
+                            # Fallback: Try to extract thread-title and thread-summary using regex
+                            # This handles malformed JSON or partial responses
+                            title_pattern = _re.compile(r'"thread-title"\s*:\s*"([^"]+)"')
+                            summary_pattern = _re.compile(r'"thread-summary"\s*:\s*"([^"]+)"', _re.DOTALL)
+                            
+                            title_match = title_pattern.search(content_str)
+                            summary_match = summary_pattern.search(content_str)
+                            
+                            if title_match or summary_match:
+                                structured_output = {}
+                                if title_match:
+                                    structured_output["thread-title"] = title_match.group(1)
+                                if summary_match:
+                                    # Handle all standard escape sequences in summary
+                                    summary = summary_match.group(1)
+                                    try:
+                                        summary = _json.loads(f'"{summary}"')
+                                    except Exception:
+                                        # Fallback to original if decoding fails
+                                        pass
+                                    structured_output["thread-summary"] = summary
+                                log.info(f"Extracted data using regex fallback: {structured_output}")
+                                return structured_output
+                            
+                            log.error(f"Failed to decode JSON from OpenRouter response. Content was: {content_str}")
                             return None
                     else:
                         error_text = await resp.text()
