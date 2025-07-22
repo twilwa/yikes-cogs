@@ -364,9 +364,13 @@ class TwitterFix(commands.Cog):
                                 if title_match:
                                     structured_output["thread-title"] = title_match.group(1)
                                 if summary_match:
-                                    # Handle escaped quotes and newlines in summary
+                                    # Handle all standard escape sequences in summary
                                     summary = summary_match.group(1)
-                                    summary = summary.replace(r'\"', '"').replace(r'\n', '\n')
+                                    try:
+                                        summary = _json.loads(f'"{summary}"')
+                                    except Exception:
+                                        # Fallback to original if decoding fails
+                                        pass
                                     structured_output["thread-summary"] = summary
                                 log.info(f"Extracted data using regex fallback: {structured_output}")
                                 return structured_output
