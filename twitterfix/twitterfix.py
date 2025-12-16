@@ -24,7 +24,7 @@ XCOM_REGEX = re.compile(r"https://x\.com/[^\s]+", re.IGNORECASE)
 
 class TwitterFix(commands.Cog):
     """
-    A cog that processes x.com links, posts r.jina.ai/xcancel.com links, and uses OpenRouter for summaries and thread titles.
+    A cog that processes x.com links, fetches tweet content via fxtwitter API, and uses OpenRouter for summaries and thread titles.
     """
 
     def __init__(self, bot: Red) -> None:
@@ -201,8 +201,6 @@ class TwitterFix(commands.Cog):
             log.info(f"Processing x.com URL: {x_url} in guild {message.guild.id}")
 
             xcancel_url = x_url.replace("x.com", "xcancel.com", 1)
-            nitter_url = x_url.replace("x.com", "nitter.net", 1)
-            jina_url = f"r.jina.ai/{nitter_url}" # User changed this from x_url to nitter_url via diff
 
             channel_perms = message.channel.permissions_for(message.guild.me)
             if not channel_perms.create_public_threads:
@@ -214,26 +212,29 @@ class TwitterFix(commands.Cog):
             botmsg = await thread.send(xcancel_url)
             log.debug(f"Created thread {thread.id} and sent initial message {botmsg.id}.")
 
-            # --- Async workflow: poll for markdown, call OpenRouter, update thread and message ---
-            markdown_url = f"https://{jina_url}"
-            
-            # User's enhanced polling loop for poll_markdown
-            poll_delay = 0.5
-            max_poll_delay = 5.0
-            markdown_content = None
-            for attempt in range(5):
-                log.debug(f"Polling attempt {attempt + 1} for {markdown_url}")
-                markdown_content = await self.poll_markdown(markdown_url)
-                if markdown_content:
-                    log.info(f"Successfully fetched markdown from {markdown_url}")
-                    break
-                log.debug(f"Polling attempt {attempt + 1} failed for {markdown_url}, retrying in {poll_delay} seconds")
-                await asyncio.sleep(poll_delay)
-                poll_delay = min(max_poll_delay, poll_delay * 2)
+            # --- Fetch tweet content: try fxtwitter API first (fast), fall back to Jina ---
+            markdown_content = await self.fetch_fxtwitter(x_url)
             
             if not markdown_content:
-                log.warning(f"Could not retrieve markdown from {markdown_url} after multiple attempts.")
-                await thread.send("Could not retrieve markdown content for summarization.")
+                log.info(f"fxtwitter failed, trying Jina fallback for {x_url}")
+                nitter_url = x_url.replace("x.com", "nitter.net", 1)
+                markdown_url = f"https://r.jina.ai/{nitter_url}"
+                
+                poll_delay = 0.5
+                max_poll_delay = 5.0
+                for attempt in range(5):
+                    log.debug(f"Polling attempt {attempt + 1} for {markdown_url}")
+                    markdown_content = await self.poll_markdown(markdown_url)
+                    if markdown_content:
+                        log.info(f"Successfully fetched markdown from {markdown_url}")
+                        break
+                    log.debug(f"Polling attempt {attempt + 1} failed for {markdown_url}, retrying in {poll_delay} seconds")
+                    await asyncio.sleep(poll_delay)
+                    poll_delay = min(max_poll_delay, poll_delay * 2)
+            
+            if not markdown_content:
+                log.warning(f"Could not retrieve content for {x_url} from fxtwitter or Jina.")
+                await thread.send("Could not retrieve tweet content for summarization.")
                 return
 
             openrouter_model = settings.get("openrouter_model")
@@ -270,11 +271,60 @@ class TwitterFix(commands.Cog):
         except Exception as e:
             log.error(f"Unhandled error in process_message for message {message.id} in guild {message.guild.id if message.guild else 'N/A'}: {e}", exc_info=True)
 
+    async def fetch_fxtwitter(self, x_url: str) -> Optional[str]:
+        """Fetch tweet content from fxtwitter API and return parsed markdown-like content."""
+        api_url = x_url.replace("x.com", "api.fxtwitter.com", 1)
+        api_url = api_url.split("?")[0]
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api_url, timeout=15) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        tweet = data.get("tweet", {})
+                        if not tweet:
+                            log.warning(f"fxtwitter API returned no tweet data for {api_url}")
+                            return None
+                        
+                        author = tweet.get("author", {})
+                        author_name = author.get("name", "Unknown")
+                        author_handle = author.get("screen_name", "unknown")
+                        text = tweet.get("text", "")
+                        likes = tweet.get("likes", 0)
+                        retweets = tweet.get("retweets", 0)
+                        replies = tweet.get("replies", 0)
+                        views = tweet.get("views", 0)
+                        created_at = tweet.get("created_at", "")
+                        replying_to = tweet.get("replying_to", "")
+                        
+                        content_parts = [
+                            f"# Tweet by @{author_handle} ({author_name})",
+                            f"\n{text}",
+                        ]
+                        
+                        if replying_to:
+                            content_parts.insert(1, f"\n> Replying to @{replying_to}")
+                        
+                        content_parts.append(f"\n---\n💬 {replies} | 🔁 {retweets} | ❤️ {likes} | 👁️ {views}")
+                        if created_at:
+                            content_parts.append(f"\n📅 {created_at}")
+                        
+                        log.info(f"Successfully fetched tweet from fxtwitter: @{author_handle}")
+                        return "\n".join(content_parts)
+                    else:
+                        log.warning(f"fxtwitter API returned status {resp.status} for {api_url}")
+                        return None
+        except asyncio.TimeoutError:
+            log.warning(f"fxtwitter API timed out for {api_url}")
+        except Exception as e:
+            log.warning(f"fxtwitter API error for {api_url}: {e}")
+        return None
+
     async def poll_markdown(self, url: str, max_attempts: int = 10, delay: float = 2.0) -> Optional[str]:
         """Poll the r.jina.ai URL for markdown content, return as string if found."""
-        async with aiohttp.ClientSession() as session: # Session created once per call
+        async with aiohttp.ClientSession() as session:
             for attempt in range(max_attempts):
-                try: # Correctly indented try
+                try:
                     log.debug(f"poll_markdown attempt {attempt + 1} for {url}")
                     async with session.get(url, headers={"Accept": "text/markdown"}) as resp:
                         if resp.status == 200:
@@ -286,9 +336,9 @@ class TwitterFix(commands.Cog):
                                 log.debug(f"poll_markdown for {url} returned empty content, status {resp.status}")
                         else:
                             log.warning(f"poll_markdown for {url} failed with status {resp.status}")
-                except Exception as e: # Correctly indented except
+                except Exception as e:
                     log.warning(f"Exception during poll_markdown attempt for {url}: {e}")
-                if attempt < max_attempts - 1: # Avoid sleeping after the last attempt
+                if attempt < max_attempts - 1:
                     await asyncio.sleep(delay)
         log.warning(f"poll_markdown failed for {url} after {max_attempts} attempts.")
         return None
