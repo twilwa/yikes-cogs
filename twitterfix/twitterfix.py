@@ -1,6 +1,7 @@
 import re
 import json
 from typing import Literal, Optional, NoReturn
+from urllib.parse import urlsplit
 import discord
 from redbot.core import commands, Config, checks
 from redbot.core.bot import Red
@@ -21,6 +22,14 @@ DEFAULT_GUILD = {
 }
 
 XCOM_REGEX = re.compile(r"https://x\.com/[^\s]+", re.IGNORECASE)
+XCANCEL_ARTICLE_REGEX = re.compile(r"https://x\.com/i/article/\d+", re.IGNORECASE)
+DEFAULT_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/133.0.0.0 Safari/537.36"
+    )
+}
 
 class TwitterFix(commands.Cog):
     """
@@ -214,6 +223,12 @@ class TwitterFix(commands.Cog):
 
             # --- Fetch tweet content: try fxtwitter API first (fast), fall back to Jina ---
             markdown_content = await self.fetch_fxtwitter(x_url)
+
+            if not markdown_content:
+                article_url = await self.find_xcancel_article_url(xcancel_url)
+                if article_url:
+                    log.info(f"Detected X article via xcancel for {x_url}: {article_url}")
+                    markdown_content = await self.fetch_x_article_reader_markdown(x_url, article_url)
             
             if not markdown_content:
                 log.info(f"fxtwitter failed, trying Jina fallback for {x_url}")
@@ -278,18 +293,36 @@ class TwitterFix(commands.Cog):
         
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(api_url, timeout=15) as resp:
+                async with session.get(api_url, timeout=15, headers=DEFAULT_HEADERS) as resp:
                     if resp.status == 200:
                         data = await resp.json()
                         tweet = data.get("tweet", {})
                         if not tweet:
                             log.warning(f"fxtwitter API returned no tweet data for {api_url}")
                             return None
+
+                        article_markdown = self.render_fxtwitter_article(tweet)
+                        if article_markdown:
+                            author = tweet.get("author", {})
+                            log.info(
+                                "Successfully fetched article content from fxtwitter: @%s",
+                                author.get("screen_name", "unknown"),
+                            )
+                            return article_markdown
                         
                         author = tweet.get("author", {})
                         author_name = author.get("name", "Unknown")
                         author_handle = author.get("screen_name", "unknown")
                         text = tweet.get("text", "")
+                        if not text:
+                            raw_text = tweet.get("raw_text", {})
+                            if isinstance(raw_text, dict):
+                                raw_text_value = raw_text.get("text", "")
+                                if raw_text_value and not raw_text_value.startswith("https://t.co/"):
+                                    text = raw_text_value
+                        if not text.strip():
+                            log.info(f"fxtwitter returned no usable tweet text for {api_url}")
+                            return None
                         likes = tweet.get("likes", 0)
                         retweets = tweet.get("retweets", 0)
                         replies = tweet.get("replies", 0)
@@ -320,9 +353,171 @@ class TwitterFix(commands.Cog):
             log.warning(f"fxtwitter API error for {api_url}: {e}")
         return None
 
+    def render_fxtwitter_article(self, tweet: dict) -> Optional[str]:
+        article = tweet.get("article") or {}
+        content = article.get("content") or {}
+        blocks = content.get("blocks") or []
+        title = (article.get("title") or "").strip()
+        preview_text = (article.get("preview_text") or "").strip()
+        if not title and not preview_text and not blocks:
+            return None
+
+        author = tweet.get("author", {})
+        author_name = author.get("name", "Unknown")
+        author_handle = author.get("screen_name", "unknown")
+        article_id = article.get("id")
+        article_url = f"https://x.com/i/article/{article_id}" if article_id else None
+        body = self.render_x_article_blocks(content, article.get("media_entities") or [])
+        likes = tweet.get("likes", 0)
+        retweets = tweet.get("retweets", 0)
+        replies = tweet.get("replies", 0)
+        views = tweet.get("views", 0)
+        created_at = tweet.get("created_at", "")
+
+        content_parts = [f"# X Article by @{author_handle} ({author_name})"]
+        if title:
+            content_parts.append(f"\n## {title}")
+        if preview_text and not body.startswith(preview_text):
+            content_parts.append(f"\n{preview_text}")
+        if body:
+            content_parts.append(f"\n{body}")
+        if article_url:
+            content_parts.append(f"\nArticle URL: {article_url}")
+        content_parts.append(f"\nOriginal post: {tweet.get('url', '')}")
+        content_parts.append(f"\n---\n💬 {replies} | 🔁 {retweets} | ❤️ {likes} | 👁️ {views}")
+        if created_at:
+            content_parts.append(f"\n📅 {created_at}")
+        return "\n".join(part for part in content_parts if part)
+
+    def render_x_article_blocks(self, content: dict, media_entities: list[dict]) -> str:
+        entity_lookup = self.build_entity_lookup(content.get("entityMap") or [])
+        media_lookup = self.build_media_lookup(media_entities)
+        rendered_blocks: list[str] = []
+
+        for block in content.get("blocks") or []:
+            block_type = block.get("type", "unstyled")
+            raw_text = block.get("text", "")
+            text = self.apply_article_entities(raw_text, block.get("entityRanges") or [], entity_lookup).strip()
+            if block_type == "atomic":
+                media_markdown = self.render_article_media_block(block, entity_lookup, media_lookup)
+                if media_markdown:
+                    rendered_blocks.append(media_markdown)
+                continue
+            if not text:
+                continue
+
+            if block_type == "header-one":
+                rendered_blocks.append(f"# {text}")
+            elif block_type == "header-two":
+                rendered_blocks.append(f"## {text}")
+            elif block_type == "header-three":
+                rendered_blocks.append(f"### {text}")
+            elif block_type == "unordered-list-item":
+                rendered_blocks.append(f"- {text}")
+            elif block_type == "ordered-list-item":
+                rendered_blocks.append(f"1. {text}")
+            elif block_type == "blockquote":
+                rendered_blocks.append(f"> {text}")
+            else:
+                rendered_blocks.append(text)
+
+        return "\n\n".join(rendered_blocks)
+
+    def build_entity_lookup(self, entity_map: list | dict) -> dict[str, dict]:
+        if isinstance(entity_map, dict):
+            return {str(key): value for key, value in entity_map.items()}
+        lookup = {}
+        for item in entity_map:
+            if not isinstance(item, dict):
+                continue
+            key = item.get("key")
+            value = item.get("value")
+            if key is not None and isinstance(value, dict):
+                lookup[str(key)] = value
+        return lookup
+
+    def build_media_lookup(self, media_entities: list[dict]) -> dict[str, str]:
+        lookup = {}
+        for media in media_entities:
+            if not isinstance(media, dict):
+                continue
+            media_id = str(media.get("media_id", ""))
+            media_info = media.get("media_info") or {}
+            original_img_url = media_info.get("original_img_url")
+            if media_id and original_img_url:
+                lookup[media_id] = original_img_url
+        return lookup
+
+    def apply_article_entities(self, text: str, entity_ranges: list[dict], entity_lookup: dict[str, dict]) -> str:
+        rendered = text
+        for entity_range in sorted(entity_ranges, key=lambda item: item.get("offset", 0), reverse=True):
+            offset = entity_range.get("offset", 0)
+            length = entity_range.get("length", 0)
+            key = str(entity_range.get("key"))
+            entity = entity_lookup.get(key) or {}
+            entity_type = entity.get("type")
+            entity_data = entity.get("data") or {}
+            span = rendered[offset:offset + length]
+            replacement = span
+            if entity_type == "LINK" and entity_data.get("url"):
+                replacement = f"[{span}]({entity_data['url']})"
+            rendered = rendered[:offset] + replacement + rendered[offset + length:]
+        return rendered
+
+    def render_article_media_block(
+        self,
+        block: dict,
+        entity_lookup: dict[str, dict],
+        media_lookup: dict[str, str],
+    ) -> Optional[str]:
+        for entity_range in block.get("entityRanges") or []:
+            key = str(entity_range.get("key"))
+            entity = entity_lookup.get(key) or {}
+            if entity.get("type") != "MEDIA":
+                continue
+            media_items = (entity.get("data") or {}).get("mediaItems") or []
+            urls = []
+            for media_item in media_items:
+                media_id = str(media_item.get("mediaId", ""))
+                media_url = media_lookup.get(media_id)
+                if media_url:
+                    urls.append(media_url)
+            if urls:
+                return "\n".join(f"![Article image]({url})" for url in urls)
+        return None
+
+    async def find_xcancel_article_url(self, xcancel_url: str) -> Optional[str]:
+        try:
+            async with aiohttp.ClientSession(headers=DEFAULT_HEADERS) as session:
+                async with session.get(xcancel_url, timeout=15, allow_redirects=True) as resp:
+                    text = await resp.text()
+                    match = XCANCEL_ARTICLE_REGEX.search(text)
+                    if match:
+                        return match.group(0)
+                    if "Verifying your request" in text:
+                        log.debug(f"xcancel anti-bot page blocked article detection for {xcancel_url}")
+        except asyncio.TimeoutError:
+            log.warning(f"xcancel article detection timed out for {xcancel_url}")
+        except Exception as e:
+            log.warning(f"xcancel article detection failed for {xcancel_url}: {e}")
+        return None
+
+    async def fetch_x_article_reader_markdown(self, x_url: str, article_url: str) -> Optional[str]:
+        path = urlsplit(x_url).path.lstrip("/")
+        markdown_url = f"https://r.jina.ai/http://x-reader.val.run/{path}"
+        markdown_content = await self.poll_markdown(markdown_url)
+        if not markdown_content:
+            return None
+        return (
+            "# X Article\n\n"
+            f"Original post: {x_url}\n"
+            f"Article URL: {article_url}\n\n"
+            f"{markdown_content}"
+        )
+
     async def poll_markdown(self, url: str, max_attempts: int = 10, delay: float = 2.0) -> Optional[str]:
         """Poll the r.jina.ai URL for markdown content, return as string if found."""
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=DEFAULT_HEADERS) as session:
             for attempt in range(max_attempts):
                 try:
                     log.debug(f"poll_markdown attempt {attempt + 1} for {url}")
