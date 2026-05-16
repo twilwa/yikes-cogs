@@ -1,0 +1,25 @@
+twitterfix/test_twitterfix.py
+  s_7d70b0e1a82deb::t_95e0bdde61fdb4 39-40,70
+  s_7d70b0e1a82deb::t_fd285c66d655f7 1-38,41-69,71-105,110-116
+  s_7d70b0e1a82deb::t_9fb258e3c821f6 106-109
+twitterfix/twitterfix.py
+  s_7d70b0e1a82deb::t_7bbb507e836d3e 1-3,509
+twitterfix/pyproject.toml
+  s_7d70b0e1a82deb::t_7bbb507e836d3e 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "fe3bbb279667b593fb8dbe2d54723b4c7d12890a",
+  "prompts": {},
+  "sessions": {
+    "s_7d70b0e1a82deb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e2e44-7bbd-7bc0-abed-fa7e4bc13599",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Unknown <unknown@example.com>"
+    }
+  }
+}
