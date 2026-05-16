@@ -87,7 +87,7 @@ def load_twitterfix_module():
 
 
 class TwitterFixArticleReaderTests(unittest.IsolatedAsyncioTestCase):
-    async def test_article_reader_fetch_uses_detected_article_url_path(self):
+    async def test_article_reader_fetch_uses_original_status_url_path(self):
         module = load_twitterfix_module()
         cog = module.TwitterFix.__new__(module.TwitterFix)
         requested_urls = []
@@ -105,7 +105,7 @@ class TwitterFixArticleReaderTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             requested_urls,
-            ["https://r.jina.ai/http://x-reader.val.run/i/article/98765"],
+            ["https://r.jina.ai/http://x-reader.val.run/example/status/12345"],
         )
         self.assertIn("Original post: https://x.com/example/status/12345", result)
         self.assertIn("Article URL: https://x.com/i/article/98765", result)

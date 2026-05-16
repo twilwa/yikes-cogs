@@ -506,7 +506,7 @@ class TwitterFix(commands.Cog):
         return None
 
     async def fetch_x_article_reader_markdown(self, x_url: str, article_url: str) -> Optional[str]:
-        path = urlsplit(article_url).path.lstrip("/")
+        path = urlsplit(x_url).path.lstrip("/")
         markdown_url = f"https://r.jina.ai/http://x-reader.val.run/{path}"
         markdown_content = await self.poll_markdown(markdown_url)
         if not markdown_content:
